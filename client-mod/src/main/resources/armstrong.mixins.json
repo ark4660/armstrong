@@ -4,8 +4,14 @@
 	"compatibilityLevel": "JAVA_25",
 	"client": [
 		"CameraMixin",
+		"ChatComponentMixin",
+		"ClockMixin",
 		"GuiMixin",
-		"MouseHandlerMixin"
+		"LevelWeatherMixin",
+		"LightmapMixin",
+		"MouseHandlerMixin",
+		"ParticleEngineMixin",
+		"ScreenEffectRendererMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

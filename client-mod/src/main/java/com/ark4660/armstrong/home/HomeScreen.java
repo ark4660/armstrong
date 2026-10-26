@@ -7,6 +7,7 @@ import java.util.List;
 import com.ark4660.armstrong.ArmstrongClient;
 import com.ark4660.armstrong.gui.ArmstrongScreen;
 import com.ark4660.armstrong.modules.Interface;
+import com.ark4660.armstrong.replay.Flashback;
 import com.ark4660.armstrong.ui.Hits;
 import com.ark4660.armstrong.ui.Term;
 import com.ark4660.armstrong.ui.Theme;
@@ -99,6 +100,14 @@ public abstract class HomeScreen extends Screen {
 							new ServerData(s.name, s.id, ServerData.Type.OTHER), false, null), "reconnect", "server"));
 		}
 		out.add(new Action("realms", "", () -> minecraft.setScreenAndShow(new RealmsMainScreen(this))));
+		if (Flashback.installed()) {
+			out.add(new Action("replays", "flashback", () -> {
+				Screen s = Flashback.replayScreen(this);
+				if (s != null) {
+					minecraft.setScreenAndShow(s);
+				}
+			}, "replay", "watch"));
+		}
 		out.add(new Action("armstrong", "~/modules", () -> minecraft.setScreenAndShow(
 				new ArmstrongScreen(ArmstrongClient.modules(), ArmstrongClient.menuKey())), "modules", "mods"));
 		out.add(new Action("options", "", () -> minecraft.setScreenAndShow(new OptionsScreen(this, minecraft.options)), "settings"));

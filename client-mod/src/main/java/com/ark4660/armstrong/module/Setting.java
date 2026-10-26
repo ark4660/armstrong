@@ -7,7 +7,7 @@ import com.google.gson.JsonPrimitive;
  * A module option the menu can show and the config can save. Kinds: on/off,
  * a number in a range, or one of a list of choices.
  */
-public abstract sealed class Setting<T> permits Setting.Bool, Setting.Number, Setting.Choice {
+public abstract sealed class Setting<T> permits Setting.Bool, Setting.Number, Setting.Choice, Setting.Text {
 	public final String id;
 	public final String name;
 	protected final T defaultValue;
@@ -109,6 +109,38 @@ public abstract sealed class Setting<T> permits Setting.Bool, Setting.Number, Se
 		void fromJson(JsonElement json) {
 			if (json.isJsonPrimitive() && json.getAsJsonPrimitive().isNumber()) {
 				set(json.getAsDouble());
+			}
+		}
+	}
+
+	/** Free text, like a chat message for a hotkey. */
+	public static final class Text extends Setting<String> {
+		public final int maxLength;
+
+		public Text(String id, String name, String defaultValue, int maxLength) {
+			super(id, name, defaultValue);
+			this.maxLength = maxLength;
+		}
+
+		@Override
+		public void set(String v) {
+			value = v.length() > maxLength ? v.substring(0, maxLength) : v;
+		}
+
+		@Override
+		public String display() {
+			return value.isEmpty() ? "(empty)" : "\"" + value + "\"";
+		}
+
+		@Override
+		JsonElement toJson() {
+			return new JsonPrimitive(value);
+		}
+
+		@Override
+		void fromJson(JsonElement json) {
+			if (json.isJsonPrimitive()) {
+				set(json.getAsString());
 			}
 		}
 	}

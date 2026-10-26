@@ -46,6 +46,8 @@ public final class ArmstrongScreen extends Screen {
 
 	private Module editing;
 	private int settingRow;
+	private Setting.Text editingText; // a text setting being typed into
+	private String textBuffer = "";
 
 	private int x0, y0, w, h; // window
 	private final List<Hit> hits = new ArrayList<>();
@@ -172,7 +174,25 @@ public final class ArmstrongScreen extends Screen {
 					n.set(n.get() + dir * n.step);
 				}
 			}
+			case Setting.Text t -> {
+				if (dir == 0) {
+					editingText = t;
+					textBuffer = t.get();
+					minecraft.textInputManager().startTextInput(this);
+				}
+			}
 		}
+	}
+
+	private void stopTextEdit(boolean save) {
+		if (editingText == null) {
+			return;
+		}
+		if (save) {
+			editingText.set(textBuffer.strip());
+		}
+		editingText = null;
+		minecraft.textInputManager().stopTextInput(this);
 	}
 
 	// ---- input ----
@@ -180,6 +200,20 @@ public final class ArmstrongScreen extends Screen {
 	@Override
 	public boolean keyPressed(KeyEvent event) {
 		int key = event.key();
+		if (editingText != null) {
+			switch (key) {
+				case InputConstants.KEY_RETURN -> stopTextEdit(true);
+				case InputConstants.KEY_ESCAPE -> stopTextEdit(false);
+				case InputConstants.KEY_BACKSPACE -> {
+					if (!textBuffer.isEmpty()) {
+						textBuffer = textBuffer.substring(0, textBuffer.offsetByCodePoints(textBuffer.length(), -1));
+					}
+				}
+				default -> {
+				}
+			}
+			return true;
+		}
 		if (searching) {
 			switch (key) {
 				case InputConstants.KEY_ESCAPE -> {
@@ -250,6 +284,12 @@ public final class ArmstrongScreen extends Screen {
 
 	@Override
 	public boolean charTyped(CharacterEvent event) {
+		if (editingText != null) {
+			if (event.isAllowedChatCharacter() && textBuffer.length() < editingText.maxLength) {
+				textBuffer += event.codepointAsString();
+			}
+			return true;
+		}
 		if (!searching) {
 			return false;
 		}
@@ -316,6 +356,7 @@ public final class ArmstrongScreen extends Screen {
 	@Override
 	public void removed() {
 		setSearching(false);
+		stopTextEdit(false);
 		super.removed();
 	}
 
@@ -511,6 +552,15 @@ public final class ArmstrongScreen extends Screen {
 				switch (s) {
 					case Setting.Bool b -> line.add(String.valueOf(b.get()), b.get() ? accent : Theme.MUTED);
 					case Setting.Choice c -> line.add("<" + choiceText(c.get()) + ">", Theme.CYAN);
+					case Setting.Text t -> {
+						if (t == editingText) {
+							line.add(textBuffer, Theme.BRIGHT);
+							line.add((System.currentTimeMillis() / 500) % 2 == 0 ? "█" : " ", accent);
+							line.add("  enter saves · esc cancels", Theme.MUTED);
+						} else {
+							line.add(t.display(), t.get().isEmpty() ? Theme.MUTED : Theme.AMBER);
+						}
+					}
 					case Setting.Number n -> {
 						line.add(Term.pad(n.display(), 7), Theme.AMBER);
 						int barX = x + line.width();

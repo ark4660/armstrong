@@ -40,6 +40,22 @@ public final class ModuleManager {
 		return module;
 	}
 
+	/** The registered module of a type, or null. */
+	public <M extends Module> M get(Class<M> type) {
+		for (Module m : modules) {
+			if (type.isInstance(m)) {
+				return type.cast(m);
+			}
+		}
+		return null;
+	}
+
+	/** The module of a type if it's registered and switched on, else null. */
+	public <M extends Module> M active(Class<M> type) {
+		M m = get(type);
+		return m != null && m.isEnabled() ? m : null;
+	}
+
 	public List<Module> all() {
 		return Collections.unmodifiableList(modules);
 	}
@@ -54,9 +70,15 @@ public final class ModuleManager {
 
 	/** Draws HUD modules, from Fabric's HUD layer (to check in-game: hidden with F1). */
 	public void renderHud(GuiGraphicsExtractor g, Minecraft mc) {
+		if (com.ark4660.armstrong.replay.Flashback.inReplay()) {
+			return; // a replay shows what was recorded, not live fps and memory
+		}
+		// Panels in the same corner stack, in menu order, so none overlap.
+		java.util.Map<String, Integer> used = new java.util.HashMap<>();
 		for (Module m : modules) {
 			if (m instanceof HudModule hud && hud.isEnabled()) {
-				hud.render(g, mc);
+				int before = used.getOrDefault(hud.anchor(), 0);
+				used.put(hud.anchor(), before + hud.render(g, mc, before));
 			}
 		}
 		renderIndicators(g);

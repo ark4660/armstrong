@@ -233,6 +233,23 @@
       "sha1": "4cc25ce6217326ff14169f5358921773297e9475",
       "sha512": "048a0979807afb96bae7801b7445746c985081bb55fab9b80b286036234a9869cc84f83c40ab77a2600b7e06ad44178ee17935b706b751c9b38f87ebc6e180f8",
       "size": 60760
+    },
+    {
+      "id": "flashback",
+      "name": "Flashback",
+      "version": "0.43.6",
+      "optional": true,
+      "requires": [
+        "fabric-api"
+      ],
+      "project": "4das1Fjq",
+      "slug": "flashback",
+      "versionId": "cV1pa0YV",
+      "file": "Flashback-0.43.6-for-MC26.3.jar",
+      "url": "https://cdn.modrinth.com/data/4das1Fjq/versions/cV1pa0YV/Flashback-0.43.6-for-MC26.3.jar",
+      "sha1": "4fd7d2d677332f58b00107b27615379eadc6cfcb",
+      "sha512": "80d194d117352942ebf2bc96914e5f0f550ab857204cda5b362459110ea22a38332825ecebf5ee3fc54d4f01c72279c0a06e45f26e26b62c49015e208167242e",
+      "size": 201008177
     }
   ]
 }

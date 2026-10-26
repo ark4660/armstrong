@@ -1,5 +1,11 @@
 {
 	"key.category.armstrong.armstrong": "Armstrong",
 	"key.armstrong.menu": "Open Armstrong menu",
-	"key.armstrong.zoom": "Zoom"
+	"key.armstrong.zoom": "Zoom",
+	"key.armstrong.snaplook": "Snaplook (hold)",
+	"key.armstrong.stopwatch": "Stopwatch",
+	"key.armstrong.auto_text_1": "Auto text 1",
+	"key.armstrong.auto_text_2": "Auto text 2",
+	"key.armstrong.auto_text_3": "Auto text 3",
+	"key.armstrong.replay_record": "Replay: start/stop recording"
 }

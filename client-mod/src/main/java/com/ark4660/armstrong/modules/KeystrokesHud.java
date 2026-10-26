@@ -18,7 +18,8 @@ public final class KeystrokesHud extends HudModule {
 	private final Setting.Bool space = add(new Setting.Bool("space", "space_bar", true));
 
 	public KeystrokesHud() {
-		super("keystrokes", "Keystrokes", "Shows movement keys and clicks as you press them.", false, "Bottom left");
+		// Top right: the bottom left is where chat appears.
+		super("keystrokes", "Keystrokes", "Shows movement keys and clicks as you press them.", false, "Top right");
 	}
 
 	@Override

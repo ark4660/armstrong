@@ -9,9 +9,13 @@ import com.ark4660.armstrong.module.Setting;
 import com.ark4660.armstrong.ui.Term;
 import com.ark4660.armstrong.ui.Theme;
 
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.PlayerInfo;
+import net.minecraft.world.phys.Vec3;
 
 /** The status block: fps, ping, coordinates, facing and clicks per second. */
 public final class StatusHud extends HudModule.Text {
@@ -21,6 +25,17 @@ public final class StatusHud extends HudModule.Text {
 	private final Setting.Bool coords = add(new Setting.Bool("coords", "coords", true));
 	private final Setting.Bool facing = add(new Setting.Bool("facing", "facing", true));
 	private final Setting.Bool cps = add(new Setting.Bool("cps", "cps", true));
+	private final Setting.Bool clock = add(new Setting.Bool("clock", "clock", false));
+	private final Setting.Bool playtime = add(new Setting.Bool("playtime", "playtime", false));
+	private final Setting.Bool speed = add(new Setting.Bool("speed", "speed", false));
+	private final Setting.Bool saturation = add(new Setting.Bool("saturation", "saturation", false));
+	private final Setting.Bool biome = add(new Setting.Bool("biome", "biome", false));
+	private final Setting.Bool memory = add(new Setting.Bool("memory", "memory", false));
+	private final Setting.Bool server = add(new Setting.Bool("server", "server", false));
+
+	private long joinedAt = System.currentTimeMillis();
+	private Vec3 lastPos;
+	private double blocksPerSecond;
 
 	private final String version = FabricLoader.getInstance().getModContainer("armstrong")
 			.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("");
@@ -52,15 +67,62 @@ public final class StatusHud extends HudModule.Text {
 			}
 		}
 		if (cps.get()) {
-			out.add(new Term.Line().add(Term.pad("cps", 6), Theme.MUTED)
+			out.add(new Term.Line().add(Term.pad("cps", 7), Theme.MUTED)
 					.add(String.valueOf(ClickCounter.left()), accent).add(" | ", Theme.MUTED)
 					.add(String.valueOf(ClickCounter.right()), accent));
+		}
+		if (clock.get()) {
+			out.add(row("time", LocalTime.now().format(CLOCK), Theme.TEXT));
+		}
+		if (playtime.get()) {
+			long s = (System.currentTimeMillis() - joinedAt) / 1000;
+			out.add(row("played", String.format("%d:%02d:%02d", s / 3600, s / 60 % 60, s % 60), Theme.TEXT));
+		}
+		if (mc.player != null) {
+			if (speed.get()) {
+				out.add(row("speed", String.format("%.1f b/s", blocksPerSecond), Theme.TEXT));
+			}
+			if (saturation.get()) {
+				out.add(row("food", mc.player.getFoodData().getFoodLevel() + " · sat " + String.format("%.1f", mc.player.getFoodData().getSaturationLevel()), Theme.TEXT));
+			}
+			if (biome.get() && mc.level != null) {
+				String name = mc.level.getBiome(mc.player.blockPosition()).unwrapKey()
+						.map(k -> k.identifier().getPath()).orElse("?");
+				out.add(row("biome", name, Theme.TEXT));
+			}
+		}
+		if (memory.get()) {
+			Runtime rt = Runtime.getRuntime();
+			long used = (rt.totalMemory() - rt.freeMemory()) >> 20, max = rt.maxMemory() >> 20;
+			out.add(row("mem", used + "/" + max + " MB", used * 10 > max * 9 ? Theme.AMBER : Theme.TEXT));
+		}
+		if (server.get()) {
+			var sd = mc.getCurrentServer();
+			out.add(row("server", sd != null ? sd.ip : mc.hasSingleplayerServer() ? "singleplayer" : "-", Theme.TEXT));
 		}
 		return out;
 	}
 
+	private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("HH:mm");
+
+	@Override
+	public void tick(Minecraft mc) {
+		if (mc.player == null) {
+			lastPos = null;
+			joinedAt = System.currentTimeMillis();
+			return;
+		}
+		Vec3 pos = mc.player.position();
+		if (lastPos != null) {
+			double dx = pos.x - lastPos.x, dz = pos.z - lastPos.z;
+			double now = Math.sqrt(dx * dx + dz * dz) * 20; // per tick → per second, horizontal
+			blocksPerSecond = blocksPerSecond * 0.7 + now * 0.3;
+		}
+		lastPos = pos;
+	}
+
 	private static Term.Line row(String key, String value, int color) {
-		return new Term.Line().add(Term.pad(key, 6), Theme.MUTED).add(value, color);
+		return new Term.Line().add(Term.pad(key, 7), Theme.MUTED).add(value, color);
 	}
 
 	private static String latency(Minecraft mc) {

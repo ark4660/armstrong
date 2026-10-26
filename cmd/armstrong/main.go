@@ -442,7 +442,7 @@ func cmdLaunch(ctx context.Context, paths app.Paths, accounts *auth.Accounts, ar
 // added automatically.
 var (
 	clientCore     = []string{"fabric-api", "sodium", "lithium", "ferrite-core", "immediatelyfast", "entityculling", "dynamic-fps", "modmenu"}
-	clientOptional = []string{"iris", "sodium-extra", "reeses-sodium-options", "moreculling", "badoptimizations"}
+	clientOptional = []string{"iris", "sodium-extra", "reeses-sodium-options", "moreculling", "badoptimizations", "flashback"}
 )
 
 func cmdClient(ctx context.Context, paths app.Paths, args []string) error {
@@ -526,9 +526,16 @@ func cmdClientBuild(ctx context.Context, paths app.Paths, args []string) error {
 
 	jars, _ := filepath.Glob(filepath.Join(*src, "build", "libs", client.ModID+"-*.jar"))
 	jars = slices.DeleteFunc(jars, func(j string) bool { return strings.HasSuffix(j, "-sources.jar") })
-	if len(jars) != 1 {
-		return fmt.Errorf("expected one built jar in %s/build/libs, found %d", *src, len(jars))
+	if len(jars) == 0 {
+		return fmt.Errorf("no built jar in %s/build/libs", *src)
 	}
+	// Older builds (other versions) may still be there: take the one just built.
+	slices.SortFunc(jars, func(a, b string) int {
+		ia, _ := os.Stat(a)
+		ib, _ := os.Stat(b)
+		return ib.ModTime().Compare(ia.ModTime())
+	})
+	jars = jars[:1]
 	dev := client.DevDir(paths, *mc)
 	if err := os.MkdirAll(dev, 0o755); err != nil {
 		return err
