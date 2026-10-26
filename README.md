@@ -11,18 +11,31 @@ A terminal launcher and a performance-focused Minecraft client for Fabric.
 
 ## Install
 
-Download the launcher for your system from the
-[latest release](https://github.com/ark4660/armstrong/releases/latest) and run it:
+**Linux and macOS** (in a terminal):
 
-| System | File |
-|---|---|
-| Windows | `armstrong-windows-amd64.exe` |
-| macOS (Apple Silicon / Intel) | `armstrong-darwin-arm64` / `armstrong-darwin-amd64` |
-| Linux | `armstrong-linux-amd64` / `armstrong-linux-arm64` |
+```sh
+curl -fsSL https://raw.githubusercontent.com/ark4660/armstrong/main/scripts/install.sh | sh
+```
 
-The launcher keeps itself and the client up to date: when a new release is out
-it shows `update available` (press `U` on Home), and the client updates on its
-own before you play. From a terminal: `armstrong update`.
+**Windows** (in PowerShell):
+
+```powershell
+irm https://raw.githubusercontent.com/ark4660/armstrong/main/scripts/install.ps1 | iex
+```
+
+Then open a new terminal and run `armstrong`, or start it from your
+applications menu (Linux) or Start Menu (Windows). No admin rights are needed:
+it installs to `~/.local/bin` or `%LOCALAPPDATA%\Programs\Armstrong`, where it
+can keep itself up to date. When a new release is out it shows
+`update available` (press `U` on Home); the client updates on its own before
+you play. From a terminal: `armstrong update`.
+
+To uninstall: `curl -fsSL …/install.sh | sh -s -- --uninstall` on Linux and
+macOS; on Windows, set `$env:ARMSTRONG_UNINSTALL = 1` before running the
+PowerShell command above.
+
+You can also download a launcher directly from the
+[latest release](https://github.com/ark4660/armstrong/releases/latest).
 
 ## Releasing
 
