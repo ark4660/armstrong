@@ -3,6 +3,7 @@ package game
 import (
 	"bufio"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -98,13 +99,41 @@ func Command(inst *Installation, opt LaunchOptions) (*exec.Cmd, error) {
 	if len(opt.AddMods) > 0 {
 		args = append(args, "-Dfabric.addMods="+strings.Join(opt.AddMods, string(os.PathListSeparator)))
 	}
-	args = append(args, expand(v.Arguments.JVM, env, vars)...)
+	jvm, game := v.Arguments.JVM, v.Arguments.Game
+	if v.MinecraftArguments != "" {
+		// Pre-1.13 versions only list game arguments; the launcher supplies
+		// the JVM ones.
+		jvm = append(legacyJVMArgs(), jvm...)
+		for _, a := range strings.Fields(v.MinecraftArguments) {
+			game = append(game, Argument{Values: []string{a}})
+		}
+		vars["user_properties"] = "{}"
+	}
+	args = append(args, expand(jvm, env, vars)...)
 	args = append(args, v.MainClass)
-	args = append(args, expand(v.Arguments.Game, env, vars)...)
+	args = append(args, expand(game, env, vars)...)
+	if v.MinecraftArguments != "" && opt.Server != "" {
+		// No quick play before 1.20; old versions take --server/--port.
+		host, port := opt.Server, "25565"
+		if h, p, err := net.SplitHostPort(opt.Server); err == nil {
+			host, port = h, p
+		}
+		args = append(args, "--server", host, "--port", port)
+	}
 
 	cmd := exec.Command(inst.Java, args...)
 	cmd.Dir = opt.GameDir
 	return cmd, nil
+}
+
+// legacyJVMArgs are the JVM arguments newer version JSONs carry themselves.
+func legacyJVMArgs() []Argument {
+	return []Argument{
+		{Rules: Rules{{Action: "allow", OS: &OSRule{Name: "osx"}}}, Values: []string{"-XstartOnFirstThread"}},
+		{Values: []string{"-Djava.library.path=${natives_directory}"}},
+		{Values: []string{"-Dminecraft.launcher.brand=${launcher_name}", "-Dminecraft.launcher.version=${launcher_version}"}},
+		{Values: []string{"-cp", "${classpath}"}},
+	}
 }
 
 var placeholder = regexp.MustCompile(`\$\{([A-Za-z0-9_]+)\}`)

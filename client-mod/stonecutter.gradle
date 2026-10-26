@@ -11,4 +11,5 @@ stonecutter.active '26.3'
 tasks.register('buildAll') {
 	group = 'build'
 	dependsOn subprojects.collect { "${it.path}:build" }
+	dependsOn gradle.includedBuild('1.8.9').task(':build')
 }

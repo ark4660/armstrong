@@ -18,6 +18,7 @@ import (
 
 	"github.com/ark4660/armstrong/internal/client"
 	"github.com/ark4660/armstrong/internal/download"
+	"github.com/ark4660/armstrong/internal/game"
 	"github.com/ark4660/armstrong/internal/modmeta"
 )
 
@@ -460,7 +461,7 @@ func (p *planner) want(project, versionID, neededBy string, requested bool) erro
 		}
 		cands = []Version{*v}
 	} else {
-		vs, err := p.m.Source.Versions(p.ctx, project, p.m.Minecraft, "fabric")
+		vs, err := p.m.Source.Versions(p.ctx, project, p.m.Minecraft, game.ModrinthLoader(p.m.Minecraft))
 		if err != nil {
 			return err
 		}
@@ -806,7 +807,7 @@ func (m *Manager) CheckUpdates(ctx context.Context, installed []*Installed) ([]U
 		hashes   []string
 		channels []string
 	}{{stable, []string{"release"}}, {any, []string{"release", "beta", "alpha"}}} {
-		latest, err := m.Source.Latest(ctx, batch.hashes, m.Minecraft, "fabric", batch.channels)
+		latest, err := m.Source.Latest(ctx, batch.hashes, m.Minecraft, game.ModrinthLoader(m.Minecraft), batch.channels)
 		if err != nil {
 			return nil, err
 		}

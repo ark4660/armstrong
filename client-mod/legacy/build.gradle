@@ -1,0 +1,86 @@
+// The client mod for Minecraft 1.8.9 (Legacy Fabric). 1.8.9 has no Mojang
+// mappings, so its code uses Legacy Yarn names and can't be one Stonecutter
+// tree with the modern versions. Classes that don't touch Minecraft are
+// shared with ../src; the rest is ported in src/ here.
+plugins {
+	id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+	id 'legacy-looming' version "${loom_version}"
+}
+
+def mc = project.minecraft_version
+def javaVersion = project.java_version as int
+def parent = new Properties()
+file('../gradle.properties').withInputStream { parent.load(it) }
+// -Pversion=... (the release workflow) wins over ../gradle.properties.
+def modVersion = project.version == 'unspecified' ? parent.version : project.version
+
+base {
+	archivesName = 'armstrong'
+}
+group = parent.group
+version = "${modVersion}+${mc}"
+
+// Next to the Stonecutter versions' output, so the launcher and the release
+// workflow find every version's jar at versions/<mc>/build/libs.
+layout.buildDirectory = file("../versions/${mc}/build")
+
+sourceSets {
+	main {
+		java {
+			srcDir '../src/main/java'
+			// Only the shared classes that don't touch Minecraft.
+			include 'com/ark4660/armstrong/input/ClickCounter.java'
+			include 'com/ark4660/armstrong/module/Category.java'
+			include 'com/ark4660/armstrong/module/Indicator.java'
+			include 'com/ark4660/armstrong/module/Setting.java'
+			include 'com/ark4660/armstrong/modules/Interface.java'
+			include 'com/ark4660/armstrong/ui/Hits.java'
+			include 'com/ark4660/armstrong/ui/Theme.java'
+			// Everything in this build's own src.
+			include { it.file.toPath().startsWith(file('src').toPath()) }
+		}
+	}
+}
+
+dependencies {
+	minecraft "com.mojang:minecraft:${mc}"
+	mappings legacy.yarn(mc, project.yarn_build)
+	modImplementation "net.fabricmc:fabric-loader:${parent.loader_version}"
+	modImplementation "net.legacyfabric.legacy-fabric-api:legacy-fabric-api:${project.legacy_fabric_api_version}"
+}
+
+// Converts the shared en_us.json translations to 1.8.9's .lang format. (The
+// TrueType terminal font can't be used: 1.8.9 only has bitmap fonts.)
+tasks.register('legacyLang') {
+	def src = file('../src/main/resources/assets/armstrong/lang/en_us.json')
+	def out = layout.buildDirectory.dir('generated/lang')
+	inputs.file src
+	outputs.dir out
+	doLast {
+		def dst = out.get().file('assets/armstrong/lang/en_US.lang').asFile
+		dst.parentFile.mkdirs()
+		def json = new groovy.json.JsonSlurper().parse(src)
+		dst.text = json.collect { k, v -> "${k}=${v}" }.join('\n') + '\n'
+	}
+}
+
+tasks.withType(JavaCompile).configureEach {
+	it.options.release = javaVersion
+	it.options.encoding = 'UTF-8'
+	it.options.compilerArgs += ['-Xmaxerrs', '1000']
+}
+
+java {
+	sourceCompatibility = JavaVersion.toVersion(javaVersion)
+	targetCompatibility = JavaVersion.toVersion(javaVersion)
+}
+
+processResources {
+	def props = [version: modVersion, minecraft: mc, java: javaVersion]
+	inputs.properties props
+	filesMatching(['fabric.mod.json', '*.mixins.json']) {
+		expand props
+	}
+	// 1.8.9 reads assets/<mod>/lang/en_US.lang (key=value), not JSON.
+	from(tasks.named('legacyLang'))
+}

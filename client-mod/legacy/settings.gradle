@@ -1,0 +1,18 @@
+pluginManagement {
+	repositories {
+		maven {
+			name = 'Fabric'
+			url = 'https://maven.fabricmc.net/'
+		}
+		maven {
+			name = 'Legacy Fabric'
+			url = 'https://repo.legacyfabric.net/legacyfabric/'
+		}
+		mavenCentral()
+		gradlePluginPortal()
+	}
+}
+
+// Included from ../settings.gradle, so `:1.8.9:build` and buildAll reach it
+// like the Stonecutter versions.
+rootProject.name = '1.8.9'

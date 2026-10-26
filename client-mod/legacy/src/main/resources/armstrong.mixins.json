@@ -1,0 +1,24 @@
+{
+	"required": true,
+	"package": "com.ark4660.armstrong.mixin",
+	"compatibilityLevel": "JAVA_${java}",
+	"client": [
+		"ChatHudMixin",
+		"GameRendererMixin",
+		"HeldItemRendererMixin",
+		"InGameHudMixin",
+		"InteractionManagerMixin",
+		"KeyBindingMixin",
+		"MinecraftClientMixin",
+		"ParticleManagerMixin",
+		"PlayerInventoryMixin",
+		"TitleScreenAccessor",
+		"WorldMixin"
+	],
+	"injectors": {
+		"defaultRequire": 1
+	},
+	"overwrites": {
+		"requireAnnotations": true
+	}
+}

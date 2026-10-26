@@ -16,6 +16,7 @@ import (
 	"github.com/ark4660/armstrong/internal/app"
 	"github.com/ark4660/armstrong/internal/client"
 	"github.com/ark4660/armstrong/internal/download"
+	"github.com/ark4660/armstrong/internal/game"
 	"github.com/ark4660/armstrong/internal/instance"
 	"github.com/ark4660/armstrong/internal/modrinth"
 	"github.com/ark4660/armstrong/internal/mods"
@@ -255,7 +256,7 @@ func (m *model) runSearch(offset int) tea.Cmd {
 	m.mods.searchSeq++
 	m.mods.searching = true
 	q := modrinth.SearchQuery{
-		Text: m.mods.search.Value(), Minecraft: inst.Minecraft, Loader: "fabric",
+		Text: m.mods.search.Value(), Minecraft: inst.Minecraft, Loader: game.ModrinthLoader(inst.Minecraft),
 		Index: sortIndexes[m.mods.sortIdx].id, Offset: offset, Limit: searchPage,
 	}
 	if m.mods.catIdx > 0 && m.mods.catIdx <= len(m.mods.categories) {

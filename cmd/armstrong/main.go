@@ -443,6 +443,11 @@ func cmdLaunch(ctx context.Context, paths app.Paths, accounts *auth.Accounts, ar
 var (
 	clientCore     = []string{"fabric-api", "sodium", "lithium", "ferrite-core", "immediatelyfast", "entityculling", "dynamic-fps", "modmenu"}
 	clientOptional = []string{"iris", "sodium-extra", "reeses-sodium-options", "moreculling", "badoptimizations", "flashback"}
+
+	// Legacy Fabric versions (before 1.14) have none of the above; this is
+	// the best of what exists for them on Modrinth.
+	legacyClientCore     = []string{"legacy-fabric-api", "phosphor-legacy", "menufpsunlocker", "nnbsp-fix"}
+	legacyClientOptional = []string{"legacy-mouse-tweaks"}
 )
 
 func cmdClient(ctx context.Context, paths app.Paths, args []string) error {
@@ -468,9 +473,13 @@ func cmdClient(ctx context.Context, paths app.Paths, args []string) error {
 		return err
 	}
 	defer os.RemoveAll(tmp)
+	core, optional := clientCore, clientOptional
+	if game.IsLegacyFabric(*mc) {
+		core, optional = legacyClientCore, legacyClientOptional
+	}
 	m, err := client.Resolve(ctx, &modrinth.Client{DL: dl}, dl, tmp, client.ResolveRequest{
 		Client: app.Name, Version: app.Version, Minecraft: *mc, FabricLoader: loader,
-		Core: clientCore, Optional: clientOptional,
+		Core: core, Optional: optional,
 	})
 	if err != nil {
 		return err
@@ -632,7 +641,7 @@ func cmdMods(ctx context.Context, paths app.Paths, args []string) error {
 			}
 		}
 	case "search":
-		r, err := mr.Search(ctx, modrinth.SearchQuery{Text: strings.Join(fs.Args(), " "), Minecraft: inst.Minecraft, Loader: "fabric", Limit: 15})
+		r, err := mr.Search(ctx, modrinth.SearchQuery{Text: strings.Join(fs.Args(), " "), Minecraft: inst.Minecraft, Loader: game.ModrinthLoader(inst.Minecraft), Limit: 15})
 		if err != nil {
 			return err
 		}

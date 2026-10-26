@@ -15,6 +15,7 @@ import (
 
 	"github.com/ark4660/armstrong/internal/app"
 	"github.com/ark4660/armstrong/internal/download"
+	"github.com/ark4660/armstrong/internal/game"
 	"github.com/ark4660/armstrong/internal/modrinth"
 )
 
@@ -51,7 +52,11 @@ func TestBundledManifests(t *testing.T) {
 		for _, mod := range m.Enabled(nil) {
 			core[mod.ID] = true
 		}
-		for _, want := range []string{"fabric-api", "sodium", "lithium"} {
+		wantCore := []string{"fabric-api", "sodium", "lithium"}
+		if game.IsLegacyFabric(mc) {
+			wantCore = []string{"legacy-fabric-api", "phosphor-legacy"}
+		}
+		for _, want := range wantCore {
 			if !core[want] {
 				t.Errorf("%s: core is missing %s", mc, want)
 			}

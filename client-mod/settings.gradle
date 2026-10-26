@@ -24,3 +24,9 @@ stonecutter {
 }
 
 rootProject.name = 'armstrong'
+
+// Minecraft 1.8.9 (Legacy Fabric) is a separate build: it needs an older
+// Loom and Yarn names. `:1.8.9:build` reaches it like a Stonecutter version.
+includeBuild('legacy') {
+	name = '1.8.9'
+}

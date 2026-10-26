@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"github.com/ark4660/armstrong/internal/download"
+	"github.com/ark4660/armstrong/internal/game"
 	"github.com/ark4660/armstrong/internal/modmeta"
 	"github.com/ark4660/armstrong/internal/modrinth"
 )
@@ -115,7 +116,7 @@ func (r *resolver) resolve(ctx context.Context, idOrSlug string, optional bool) 
 			return pid, nil
 		}
 	}
-	versions, err := r.mr.Versions(ctx, idOrSlug, "fabric", r.mc)
+	versions, err := r.mr.Versions(ctx, idOrSlug, game.ModrinthLoader(r.mc), r.mc)
 	if err != nil {
 		return "", err
 	}

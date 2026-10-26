@@ -27,15 +27,18 @@ type ManifestEntry struct {
 
 // Version is a version JSON: Mojang's, or a loader profile that inheritsFrom one.
 type Version struct {
-	ID           string     `json:"id"`
-	InheritsFrom string     `json:"inheritsFrom,omitempty"`
-	Type         string     `json:"type"`
-	MainClass    string     `json:"mainClass"`
-	Arguments    Arguments  `json:"arguments"`
-	Libraries    []Library  `json:"libraries"`
-	AssetIndex   AssetIndex `json:"assetIndex"`
-	Assets       string     `json:"assets"`
-	Downloads    struct {
+	ID           string    `json:"id"`
+	InheritsFrom string    `json:"inheritsFrom,omitempty"`
+	Type         string    `json:"type"`
+	MainClass    string    `json:"mainClass"`
+	Arguments    Arguments `json:"arguments"`
+	// MinecraftArguments is the pre-1.13 form of the game arguments: one
+	// space-separated string, and no JVM arguments at all.
+	MinecraftArguments string     `json:"minecraftArguments,omitempty"`
+	Libraries          []Library  `json:"libraries"`
+	AssetIndex         AssetIndex `json:"assetIndex"`
+	Assets             string     `json:"assets"`
+	Downloads          struct {
 		Client Artifact `json:"client"`
 	} `json:"downloads"`
 	JavaVersion struct {
@@ -92,9 +95,18 @@ func (a Argument) MarshalJSON() ([]byte, error) {
 type Library struct {
 	Name      string `json:"name"`
 	Downloads struct {
-		Artifact *Artifact `json:"artifact,omitempty"`
+		Artifact    *Artifact            `json:"artifact,omitempty"`
+		Classifiers map[string]*Artifact `json:"classifiers,omitempty"`
 	} `json:"downloads"`
 	Rules Rules `json:"rules,omitempty"`
+
+	// Natives maps an OS to the classifier of its native-library jar, which
+	// is extracted into the natives folder (pre-1.19 versions). "${arch}" in a
+	// classifier stands for 32 or 64.
+	Natives map[string]string `json:"natives,omitempty"`
+	Extract struct {
+		Exclude []string `json:"exclude,omitempty"`
+	} `json:"extract,omitempty"`
 
 	URL  string `json:"url,omitempty"`
 	SHA1 string `json:"sha1,omitempty"`
@@ -127,6 +139,12 @@ func Merge(parent, child *Version) *Version {
 	}
 	if child.Type != "" {
 		out.Type = child.Type
+	}
+	if child.MinecraftArguments != "" {
+		out.MinecraftArguments = child.MinecraftArguments
+	}
+	if child.JavaVersion.Component != "" {
+		out.JavaVersion = child.JavaVersion
 	}
 	out.Arguments.JVM = append(append([]Argument{}, parent.Arguments.JVM...), child.Arguments.JVM...)
 	out.Arguments.Game = append(append([]Argument{}, parent.Arguments.Game...), child.Arguments.Game...)

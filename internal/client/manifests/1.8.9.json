@@ -1,0 +1,78 @@
+{
+  "formatVersion": 1,
+  "client": "armstrong",
+  "version": "0.1.0-dev",
+  "minecraft": "1.8.9",
+  "fabricLoader": "0.20.1",
+  "mods": [
+    {
+      "id": "legacy-fabric-api",
+      "name": "Legacy Fabric API",
+      "version": "1.13.5",
+      "project": "9CJED7xi",
+      "slug": "legacy-fabric-api",
+      "versionId": "Znk9CSGQ",
+      "file": "legacy-fabric-api-1.13.5.jar",
+      "url": "https://cdn.modrinth.com/data/9CJED7xi/versions/Znk9CSGQ/legacy-fabric-api-1.13.5.jar",
+      "sha1": "0fdd09f7a75e33eef8fac7b182e8aa2466dc9c30",
+      "sha512": "8000fa3b97a5136c2667bf9aef67aecf782e6d86716fdd589cbf0271ca2b188a171a31a0ab58731fab03cb08c47f98a43f9a3fd75cc5fd16011aefad9372d3ff",
+      "size": 1992764
+    },
+    {
+      "id": "phosphor-legacy",
+      "name": "Phosphor-Legacy",
+      "version": "0.1.5+1.8.9",
+      "project": "fLCmgUPa",
+      "slug": "phosphor-legacy",
+      "versionId": "UdBfSdpd",
+      "file": "phosphor-legacy-0.1.5+1.8.9.jar",
+      "url": "https://cdn.modrinth.com/data/fLCmgUPa/versions/UdBfSdpd/phosphor-legacy-0.1.5%2B1.8.9.jar",
+      "sha1": "54c259b7a0a5065dcc439b3cf45b82db003a9dc2",
+      "sha512": "545053cac160326707f9acf27599b16a1adea16817ac6c52cd25cd8af7755b9e34765182fe9c61b58238239799451b13db9ddd6286784710d672f470f9428a67",
+      "size": 70221
+    },
+    {
+      "id": "mfpu",
+      "name": "MenuFPSUnlocker",
+      "version": "1.1.0",
+      "project": "eACKl8af",
+      "slug": "menufpsunlocker",
+      "versionId": "qcEKR94s",
+      "file": "MenuFPSUnlocker-LegacyFabric-1.1.0.jar",
+      "url": "https://cdn.modrinth.com/data/eACKl8af/versions/qcEKR94s/MenuFPSUnlocker-LegacyFabric-1.1.0.jar",
+      "sha1": "91ef5d33f498cc4d6e38f163540ed716097096b2",
+      "sha512": "77cc9d23da5ee7899a87f7733d1a46443a56a9227f63d93c9bd4364bde567edaf6d00027400d143b2b2ca372ba30bd18993b8ffc94e53610c713ded28baa14c9",
+      "size": 121150
+    },
+    {
+      "id": "nnbsp-fix",
+      "name": "NNBSP Fix",
+      "version": "1.0.1+1.1-alpha.11.49.a-1.20-alpha.23.16.a",
+      "project": "3fiTlC13",
+      "slug": "nnbsp-fix",
+      "versionId": "ScPWv9ZI",
+      "file": "nnbsp-fix-1.0.1+1.1-alpha.11.49.a-1.20-alpha.23.16.a.jar",
+      "url": "https://cdn.modrinth.com/data/3fiTlC13/versions/ScPWv9ZI/nnbsp-fix-1.0.1%2B1.1-alpha.11.49.a-1.20-alpha.23.16.a.jar",
+      "sha1": "f0bf0a37c81d6714cc92c70fae17067a30a9a579",
+      "sha512": "d32637a1d20a5daf588bd33f6aa461d352863e4dc4e9f6d2c8b0cf3dad42d9f34132e33c93544fed603fefad650c1975aea65692802d053cc0f9f3a5c1b79b3c",
+      "size": 8862
+    },
+    {
+      "id": "legacymousetweaks",
+      "name": "Legacy Mouse Tweaks",
+      "version": "1.1.0",
+      "optional": true,
+      "requires": [
+        "legacy-fabric-api"
+      ],
+      "project": "9V4e4h7p",
+      "slug": "legacy-mouse-tweaks",
+      "versionId": "htcopxSL",
+      "file": "legacy-mouse-tweaks-1.1.0.jar",
+      "url": "https://cdn.modrinth.com/data/9V4e4h7p/versions/htcopxSL/legacy-mouse-tweaks-1.1.0.jar",
+      "sha1": "7640d44d9fe49efcdfa9cf70695002d71378b855",
+      "sha512": "684a262d5ef67b4b37fd406b2b388ed31e789efed2be4e2242a8d18a6ccf23f064aefb604416b81b7bc4290e9459e54ca679a7c0caae8d402318f59da7efc7af",
+      "size": 36622
+    }
+  ]
+}

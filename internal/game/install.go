@@ -1,11 +1,14 @@
 package game
 
 import (
+	"archive/zip"
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/ark4660/armstrong/internal/app"
 	"github.com/ark4660/armstrong/internal/download"
@@ -105,10 +108,29 @@ func (in *Installer) Install(ctx context.Context, spec Spec) (*Installation, err
 	env := CurrentEnv()
 	var items []download.Item
 	var classpath []string
+	var natives []nativeJar
 	seen := map[string]bool{}
 	for _, lib := range v.Libraries {
 		if !lib.Rules.Allowed(env) {
 			continue
+		}
+		if lib.Natives != nil {
+			it, ok, err := in.nativeItem(lib, env)
+			if err != nil {
+				return nil, err
+			}
+			if ok && !seen[it.Path] {
+				seen[it.Path] = true
+				natives = append(natives, nativeJar{it.Path, lib.Extract.Exclude})
+				if it.URL != "" {
+					items = append(items, it)
+				}
+			}
+			// Old versions list native jars as their own libraries with no
+			// main artifact; they're extracted, never put on the classpath.
+			if lib.Downloads.Artifact == nil {
+				continue
+			}
 		}
 		it, err := in.libraryItem(lib)
 		if err != nil {
@@ -131,6 +153,13 @@ func (in *Installer) Install(ctx context.Context, spec Spec) (*Installation, err
 	in.step("Libraries")
 	if err := in.DL.Fetch(ctx, items, in.progress); err != nil {
 		return nil, fmt.Errorf("libraries: %w", err)
+	}
+
+	if len(natives) > 0 {
+		in.step("Native libraries")
+		if err := extractNatives(natives, in.Paths.Natives(v.ID)); err != nil {
+			return nil, err
+		}
 	}
 
 	in.step("Assets")
@@ -161,9 +190,7 @@ func (in *Installer) manifest(ctx context.Context) (*Manifest, error) {
 	return &man, nil
 }
 
-// OldestSupported is the first Minecraft release the launcher offers. Older
-// versions use version-JSON formats (minecraftArguments, extracted natives)
-// that aren't implemented.
+// OldestSupported is the first Minecraft release GameVersions lists.
 const OldestSupported = "1.20"
 
 // GameVersions lists the releases from OldestSupported on that loader
@@ -234,6 +261,110 @@ func (in *Installer) libraryItem(lib Library) (download.Item, error) {
 		it.URL = lib.URL + path
 	}
 	return it, nil
+}
+
+// nativeItem is the native-library jar of lib for this OS, if it has one.
+func (in *Installer) nativeItem(lib Library, env Env) (download.Item, bool, error) {
+	classifier, ok := lib.Natives[env.OS]
+	if !ok {
+		return download.Item{}, false, nil
+	}
+	bits := "64"
+	if env.Arch == "x86" {
+		bits = "32"
+	}
+	classifier = strings.ReplaceAll(classifier, "${arch}", bits)
+	if a := lib.Downloads.Classifiers[classifier]; a != nil {
+		path := a.Path
+		if path == "" {
+			p, err := MavenPath(lib.Name + ":" + classifier)
+			if err != nil {
+				return download.Item{}, false, err
+			}
+			path = p
+		}
+		return download.Item{URL: a.URL, Path: filepath.Join(in.Paths.Libraries(), filepath.FromSlash(path)), SHA1: a.SHA1, Size: a.Size}, true, nil
+	}
+	// Maven-style library (a loader profile): the classifier is part of the path.
+	path, err := MavenPath(lib.Name + ":" + classifier)
+	if err != nil {
+		return download.Item{}, false, err
+	}
+	it := download.Item{Path: filepath.Join(in.Paths.Libraries(), filepath.FromSlash(path))}
+	if lib.URL != "" {
+		it.URL = lib.URL + path
+	}
+	return it, true, nil
+}
+
+type nativeJar struct {
+	path    string
+	exclude []string // path prefixes not to extract (META-INF/)
+}
+
+// extractNatives unpacks native-library jars into dir, replacing what's there.
+func extractNatives(jars []nativeJar, dir string) error {
+	if err := os.RemoveAll(dir); err != nil {
+		return err
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return err
+	}
+	for _, j := range jars {
+		if err := extractJar(j, dir); err != nil {
+			return fmt.Errorf("natives %s: %w", filepath.Base(j.path), err)
+		}
+	}
+	return nil
+}
+
+func extractJar(j nativeJar, dir string) error {
+	zr, err := zip.OpenReader(j.path)
+	if err != nil {
+		return err
+	}
+	defer zr.Close()
+files:
+	for _, f := range zr.File {
+		if f.FileInfo().IsDir() {
+			continue
+		}
+		for _, ex := range j.exclude {
+			if strings.HasPrefix(f.Name, ex) {
+				continue files
+			}
+		}
+		// Only plain relative names; never write outside dir.
+		name := filepath.FromSlash(f.Name)
+		if !filepath.IsLocal(name) {
+			return fmt.Errorf("unsafe path %q", f.Name)
+		}
+		dst := filepath.Join(dir, name)
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			return err
+		}
+		if err := writeZipFile(f, dst); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func writeZipFile(f *zip.File, dst string) error {
+	r, err := f.Open()
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	w, err := os.OpenFile(dst, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0o755)
+	if err != nil {
+		return err
+	}
+	if _, err := io.Copy(w, r); err != nil {
+		w.Close()
+		return err
+	}
+	return w.Close()
 }
 
 type assetObjects struct {
