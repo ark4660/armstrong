@@ -635,8 +635,12 @@ func (m model) View() tea.View {
 		body = m.homeView()
 	}
 	content := lipgloss.JoinVertical(lipgloss.Left, m.headerView(), body)
+	// The page gives way, not the footer: a page taller than the window
+	// (a long mod description in a short terminal) is cut at the bottom so
+	// the key hints always stay on screen.
+	room := max(m.height-1, 0)
 	content = lipgloss.JoinVertical(lipgloss.Left,
-		lipgloss.PlaceVertical(max(m.height-1, 0), lipgloss.Top, content),
+		lipgloss.PlaceVertical(room, lipgloss.Top, lipgloss.NewStyle().MaxHeight(room).Render(content)),
 		m.footerView())
 
 	v := tea.NewView(content)
