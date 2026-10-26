@@ -1,0 +1,29 @@
+{
+  "formatVersion": 1,
+  "capes": {
+    "armstrong": {
+      "name": "Armstrong",
+      "file": "capes/armstrong.png",
+      "sha256": "2eedb43c818792942699704e8d1dd7ebac7a054285662c5cab1db74f1ee94ced"
+    }
+  },
+  "badges": {
+    "dev": {
+      "name": "Armstrong developer",
+      "symbol": "◆",
+      "color": "#5EF38C"
+    },
+    "early": {
+      "name": "Early tester",
+      "symbol": "◆",
+      "color": "#FFB454"
+    }
+  },
+  "players": {
+    "84f41e431fbd46c8aa4f8333a769c6a0": {
+      "name": "ark4660",
+      "cape": "armstrong",
+      "badge": "dev"
+    }
+  }
+}

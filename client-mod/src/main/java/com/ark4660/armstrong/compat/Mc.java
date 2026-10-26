@@ -71,6 +71,38 @@ public final class Mc {
 		*///?}
 	}
 
+	/** Runs on the render thread (textures must be made there). */
+	public static void onRenderThread(Runnable r) {
+		Minecraft.getInstance().execute(r);
+	}
+
+	/** Registers a PNG as a texture under id; false if it can't be read. */
+	public static boolean registerTexture(net.minecraft.resources.Identifier id, byte[] png) {
+		try {
+			com.mojang.blaze3d.platform.NativeImage image = com.mojang.blaze3d.platform.NativeImage.read(png);
+			//? if >=26 {
+			Minecraft.getInstance().getTextureManager().register(id,
+					new net.minecraft.client.renderer.texture.DynamicTexture(id::toString, image));
+			//?} else {
+			/*Minecraft.getInstance().getTextureManager().register(id,
+					new net.minecraft.client.renderer.texture.DynamicTexture(image));
+			*///?}
+			return true;
+		} catch (java.io.IOException | RuntimeException e) {
+			com.ark4660.armstrong.ArmstrongClient.LOG.warn("Couldn't load texture {}: {}", id, e.toString());
+			return false;
+		}
+	}
+
+	/** A game profile's UUID (a record from authlib 7 on). */
+	public static java.util.UUID profileId(com.mojang.authlib.GameProfile profile) {
+		//? if >=26 {
+		return profile.id();
+		//?} else {
+		/*return profile.getId();
+		*///?}
+	}
+
 	/** Whether an Alt key is held. */
 	public static boolean altDown() {
 		//? if >=26 {

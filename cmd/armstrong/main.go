@@ -61,6 +61,12 @@ func main() {
 			os.Exit(1)
 		}
 		return
+	case "cosmetics":
+		if err := cmdCosmetics(ctx, os.Args[2:]); err != nil {
+			fmt.Fprintln(os.Stderr, "error:", err)
+			os.Exit(1)
+		}
+		return
 	}
 
 	paths, err := app.DefaultPaths()
@@ -120,6 +126,7 @@ Usage:
   %[1]s version
   %[1]s update [-check]                          update the launcher and the client
   %[1]s release keygen|manifest|index            build a release (used by the release workflow)
+  %[1]s cosmetics give|take|add-cape|add-badge|list|sign|keygen   manage capes and badges (in the repository)
 `, app.Name, app.Version)
 }
 

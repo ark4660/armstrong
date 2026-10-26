@@ -23,6 +23,8 @@ import com.ark4660.armstrong.modules.StatusHud;
 import com.ark4660.armstrong.modules.ToggleSprint;
 import com.ark4660.armstrong.modules.Zoom;
 import com.ark4660.armstrong.modules.Freelook;
+import com.ark4660.armstrong.cosmetics.Cosmetics;
+import com.ark4660.armstrong.cosmetics.CosmeticsModule;
 import com.ark4660.armstrong.server.ServerPolicy;
 import com.ark4660.armstrong.waypoints.WaypointStore;
 import com.ark4660.armstrong.waypoints.Waypoints;
@@ -152,9 +154,11 @@ public final class ArmstrongClient implements ClientModInitializer {
 		modules.register(new ChatModules.AutoText(autoTextKeys));
 		ChatModules.AutoGG autoGG = modules.register(new ChatModules.AutoGG());
 		ReplayModule replay = modules.register(new ReplayModule(replayKey));
+		modules.register(new CosmeticsModule());
 		ui = modules.register(new Interface()); // last: it's settings, not a feature
 		Theme.bind(ui);
 		modules.load();
+		Cosmetics.start(FabricLoader.getInstance().getConfigDir());
 		Recent.init(FabricLoader.getInstance().getConfigDir().resolve("armstrong-recent.json"));
 		// Remember the world or server for the home screen's continue entries.
 		// Modules the server doesn't allow are off while you're on it.

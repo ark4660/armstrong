@@ -15,7 +15,10 @@
 		"LightmapMixin",
 		"MouseHandlerMixin",
 		"ParticleEngineMixin",
-		"ScreenEffectRendererMixin"
+		"PlayerNameMixin",
+		"PlayerSkinMixin",
+		"ScreenEffectRendererMixin",
+		"TabNameMixin"
 	],
 	"injectors": {
 		"defaultRequire": 1

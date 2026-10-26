@@ -12,7 +12,10 @@
 		"KeyBindingMixin",
 		"MinecraftClientMixin",
 		"ParticleManagerMixin",
+		"PlayerCapeMixin",
 		"PlayerInventoryMixin",
+		"PlayerNameMixin",
+		"TabNameMixin",
 		"TitleScreenAccessor",
 		"WorldMixin"
 	],

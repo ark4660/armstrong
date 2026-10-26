@@ -49,6 +49,27 @@ public final class Mc {
 		};
 	}
 
+	/** Runs on the client thread (textures must be made there). */
+	public static void onRenderThread(Runnable r) {
+		MinecraftClient.getInstance().submit(r);
+	}
+
+	/** Registers a PNG as a texture under id; false if it can't be read. */
+	public static boolean registerTexture(net.minecraft.util.Identifier id, byte[] png) {
+		try {
+			java.awt.image.BufferedImage image = javax.imageio.ImageIO.read(new java.io.ByteArrayInputStream(png));
+			if (image == null) {
+				return false;
+			}
+			MinecraftClient.getInstance().getTextureManager().loadTexture(id,
+					new net.minecraft.client.texture.NativeImageBackedTexture(image));
+			return true;
+		} catch (java.io.IOException | RuntimeException e) {
+			com.ark4660.armstrong.ArmstrongClient.LOG.warn("Couldn't load texture {}: {}", id, e.toString());
+			return false;
+		}
+	}
+
 	/** Whether an Alt key is held. */
 	public static boolean altDown() {
 		return Keyboard.isKeyDown(Keyboard.KEY_LMENU) || Keyboard.isKeyDown(Keyboard.KEY_RMENU);
