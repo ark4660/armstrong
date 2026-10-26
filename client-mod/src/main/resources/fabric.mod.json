@@ -1,0 +1,23 @@
+{
+	"schemaVersion": 1,
+	"id": "armstrong",
+	"version": "${version}",
+	"name": "Armstrong",
+	"description": "The Armstrong client: modules, HUD and quality-of-life features on top of a tuned performance stack.",
+	"authors": ["ark4660"],
+	"contact": {
+		"sources": "https://github.com/ark4660/armstrong"
+	},
+	"license": "All-Rights-Reserved",
+	"environment": "client",
+	"entrypoints": {
+		"client": ["com.ark4660.armstrong.ArmstrongClient"]
+	},
+	"mixins": ["armstrong.mixins.json"],
+	"depends": {
+		"fabricloader": ">=0.20.1",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}

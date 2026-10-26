@@ -1,0 +1,238 @@
+{
+  "formatVersion": 1,
+  "client": "armstrong",
+  "version": "0.1.0-dev",
+  "minecraft": "26.3",
+  "fabricLoader": "0.20.1",
+  "mods": [
+    {
+      "id": "fabric-api",
+      "name": "Fabric API",
+      "version": "0.165.0+26.3",
+      "project": "P7dR8mSH",
+      "slug": "fabric-api",
+      "versionId": "EQKgpeKu",
+      "file": "fabric-api-0.165.0+26.3.jar",
+      "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/EQKgpeKu/fabric-api-0.165.0%2B26.3.jar",
+      "sha1": "8f8a23d6c9fbf7b075b31b4fb0a1007b0488d1d2",
+      "sha512": "0a4b8a14e847b71567b557b43d906c2167fa263eeeef37454a821ba286996e3da1616dc2d9647736d28a250d5ecf400541cae808359b29a62324a8a6f2ad5e30",
+      "size": 1778588
+    },
+    {
+      "id": "sodium",
+      "provides": [
+        "indium"
+      ],
+      "name": "Sodium",
+      "version": "0.9.2+mc26.3",
+      "project": "AANobbMI",
+      "slug": "sodium",
+      "versionId": "bAZQdGpg",
+      "file": "sodium-fabric-0.9.2+mc26.3.jar",
+      "url": "https://cdn.modrinth.com/data/AANobbMI/versions/bAZQdGpg/sodium-fabric-0.9.2%2Bmc26.3.jar",
+      "sha1": "9acfe851e36f4fb27d7c5baa224e8bd4e0334283",
+      "sha512": "f3f260f204b8ce5e8777c2c73f537956755ec61f3817b0b78b5e5568e8aa40f14891f146475075109747665c7c88a45ca0ca9a8df3c68d79c58ecdaa8d8c4b93",
+      "size": 1908068
+    },
+    {
+      "id": "lithium",
+      "name": "Lithium",
+      "version": "0.26.2+mc26.3",
+      "project": "gvQqBUqZ",
+      "slug": "lithium",
+      "versionId": "xS0Q8LSi",
+      "file": "lithium-fabric-0.26.2+mc26.3.jar",
+      "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/xS0Q8LSi/lithium-fabric-0.26.2%2Bmc26.3.jar",
+      "sha1": "dd5a4ec2c68d7601d8bce9076f789c55a5f8bef3",
+      "sha512": "4d7fee66132eedc71feab9390b92c95d7058edbdad0fecfac1d836a2950b97a7ca463afbede61c7ef361ce65e1f927ab9e89dde5bf2e0e0ce486afb5c5dbee40",
+      "size": 914543
+    },
+    {
+      "id": "ferritecore",
+      "name": "FerriteCore",
+      "version": "9.0.0",
+      "project": "uXXizFIs",
+      "slug": "ferrite-core",
+      "versionId": "d5ddUdiB",
+      "file": "ferritecore-9.0.0-fabric.jar",
+      "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/d5ddUdiB/ferritecore-9.0.0-fabric.jar",
+      "sha1": "eac76ff0f3753422c61b2c44487d0d195d88d4bc",
+      "sha512": "d81fa97e11784c19d42f89c2f433831d007603dd7193cee45fa177e4a6a9c52b384b198586e04a0f7f63cd996fed713322578bde9a8db57e1188854ae5cbe584",
+      "size": 72677
+    },
+    {
+      "id": "immediatelyfast",
+      "name": "ImmediatelyFast",
+      "version": "1.17.1+26.3",
+      "project": "5ZwdcRci",
+      "slug": "immediatelyfast",
+      "versionId": "3MP9UR23",
+      "file": "ImmediatelyFast-Fabric-1.17.1+26.3.jar",
+      "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/3MP9UR23/ImmediatelyFast-Fabric-1.17.1%2B26.3.jar",
+      "sha1": "f565bbeb201f2305e81761429d3f1f47e1c3a321",
+      "sha512": "8e139589fd995bce3d485a34d92a07243964212f7ed2e4fc2f6de5b9a74d0f59b03252e7ce40c64e006cf3e21bed5de27b830d33ef048b286e041f6178ad8428",
+      "size": 99586
+    },
+    {
+      "id": "entityculling",
+      "name": "Entity Culling",
+      "version": "1.11.3",
+      "requires": [
+        "fabric-api"
+      ],
+      "project": "NNAgCjsB",
+      "slug": "entityculling",
+      "versionId": "X1g3VhTx",
+      "file": "entityculling-fabric-1.11.3-mc26.3.jar",
+      "url": "https://cdn.modrinth.com/data/NNAgCjsB/versions/X1g3VhTx/entityculling-fabric-1.11.3-mc26.3.jar",
+      "sha1": "45f47f7a067f5efd733a32767dc3d1d770678b2a",
+      "sha512": "b6209bb62d72376d3fd284da137ec93a6dd38ebe5fd38ab9190deeade68b5b7f4bf915f4abcb4a807afe18cb9f0b59e11be789d46df6f0e6f64388ed2edc284d",
+      "size": 1508547
+    },
+    {
+      "id": "dynamic_fps",
+      "name": "Dynamic FPS",
+      "version": "3.11.10",
+      "requires": [
+        "fabric-api"
+      ],
+      "project": "LQ3K71Q1",
+      "slug": "dynamic-fps",
+      "versionId": "Jwq069rR",
+      "file": "dynamic-fps-3.11.10+minecraft-26.3.0-fabric.jar",
+      "url": "https://cdn.modrinth.com/data/LQ3K71Q1/versions/Jwq069rR/dynamic-fps-3.11.10%2Bminecraft-26.3.0-fabric.jar",
+      "sha1": "a4860c9480f0ce1a468e1e4c254214b1f97e19b3",
+      "sha512": "7976d11411babfa3ac0c38898f26ee6192f22a4f595b637eeae3cc5185f326c0e4b9fd7d00b3d7e8d020dd861295f0df52f9a9d7c67e88946d0ba9fff4a9f894",
+      "size": 189474
+    },
+    {
+      "id": "modmenu",
+      "name": "Mod Menu",
+      "version": "21.0.0",
+      "requires": [
+        "fabric-api",
+        "placeholder-api"
+      ],
+      "project": "mOgUt4GM",
+      "slug": "modmenu",
+      "versionId": "kyy7dbrZ",
+      "file": "modmenu-21.0.0.jar",
+      "url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/kyy7dbrZ/modmenu-21.0.0.jar",
+      "sha1": "66ec40f1cd0c037ddca2b5fc6b4b976d479c18e8",
+      "sha512": "588c0c557963f4778572ee81bfafc190b332c26d5926c5fe7e3e1614dcf8e14f58e3bc80a97694521dd05907e9753a7c8575048ea769e4dbf40a3db74a4e2606",
+      "size": 856779
+    },
+    {
+      "id": "placeholder-api",
+      "name": "Text Placeholder API",
+      "version": "3.2.0+26.3",
+      "project": "eXts2L7r",
+      "slug": "placeholder-api",
+      "versionId": "lXytLqWj",
+      "file": "placeholder-api-3.2.0+26.3.jar",
+      "url": "https://cdn.modrinth.com/data/eXts2L7r/versions/lXytLqWj/placeholder-api-3.2.0%2B26.3.jar",
+      "sha1": "4c455faa6333dbaef72cedbb91fe4a2a03176741",
+      "sha512": "eb2bb31e51068aad2581b7864ea7b11b1209ba1c2b27551cd5837d9b312b818b73bb47c06374b46b99b73401c62c6b6c115f702c55aed6afd467ad8ad6448de4",
+      "size": 254959
+    },
+    {
+      "id": "iris",
+      "name": "Iris Shaders",
+      "version": "1.11.7+mc26.3",
+      "optional": true,
+      "requires": [
+        "sodium"
+      ],
+      "project": "YL57xq9U",
+      "slug": "iris",
+      "versionId": "vTN4NRGW",
+      "file": "iris-fabric-1.11.7+mc26.3.jar",
+      "url": "https://cdn.modrinth.com/data/YL57xq9U/versions/vTN4NRGW/iris-fabric-1.11.7%2Bmc26.3.jar",
+      "sha1": "fa03640ba1e4ef2f7ae3619c6373a06e46d0ba2c",
+      "sha512": "d8d3312f77fc52a48e4a6cd836fda33669bdebcb4de0b8c0d30adc808b287330a533e0baef355cc1ce6336a26851d9775369a802a4666b7b7a6266af20088f42",
+      "size": 2850938
+    },
+    {
+      "id": "sodium-extra",
+      "name": "Sodium Extra",
+      "version": "0.9.5+mc26.3",
+      "optional": true,
+      "requires": [
+        "sodium"
+      ],
+      "project": "PtjYWJkn",
+      "slug": "sodium-extra",
+      "versionId": "fs5l9Q1U",
+      "file": "sodium-extra-fabric-0.9.5+mc26.3.jar",
+      "url": "https://cdn.modrinth.com/data/PtjYWJkn/versions/fs5l9Q1U/sodium-extra-fabric-0.9.5%2Bmc26.3.jar",
+      "sha1": "f0201a1b67f3405de7152fec484228db45dcbece",
+      "sha512": "785632a8e0081a207124ad72f0862216902b89f40d4133d91b9f9553c0fe345478685630505eaba2fd6e49fdcc388414dd1ad9694cd15a0c29a8fbe0bec8d022",
+      "size": 481973
+    },
+    {
+      "id": "reeses-sodium-options",
+      "name": "Reese's Sodium Options",
+      "version": "2.2.5+mc26.3",
+      "optional": true,
+      "requires": [
+        "sodium"
+      ],
+      "project": "Bh37bMuy",
+      "slug": "reeses-sodium-options",
+      "versionId": "EfchygKx",
+      "file": "reeses-sodium-options-fabric-2.2.5+mc26.3.jar",
+      "url": "https://cdn.modrinth.com/data/Bh37bMuy/versions/EfchygKx/reeses-sodium-options-fabric-2.2.5%2Bmc26.3.jar",
+      "sha1": "305aa813172358eb5e95d0a7af02a44326261226",
+      "sha512": "9c6f335618c1ec03cf9030cd88cdc32be5457bf4fbabd49c76ed68df53530730cf4681ec3742f2c6efbd48cb2b784f24c636977a95d78df62af1214ec5488be0",
+      "size": 258082
+    },
+    {
+      "id": "moreculling",
+      "name": "More Culling",
+      "version": "1.9.0",
+      "optional": true,
+      "requires": [
+        "cloth-config"
+      ],
+      "project": "51shyZVL",
+      "slug": "moreculling",
+      "versionId": "t7vAlfgO",
+      "file": "moreculling-fabric-26.3-1.9.0.jar",
+      "url": "https://cdn.modrinth.com/data/51shyZVL/versions/t7vAlfgO/moreculling-fabric-26.3-1.9.0.jar",
+      "sha1": "7308b0b0b6fffb0e076cabf97db7fc889d9ada68",
+      "sha512": "b1975ef43606a3baa1c93a040fbef96abfbf46ae6a1e364c60effd03a42568f945ede0bde329241e87adc6a9c2769dd1d13ad286869c689018035eff677442b2",
+      "size": 294320
+    },
+    {
+      "id": "cloth-config",
+      "provides": [
+        "cloth-config2"
+      ],
+      "name": "Cloth Config API",
+      "version": "26.3.159",
+      "optional": true,
+      "project": "9s6osm5g",
+      "slug": "cloth-config",
+      "versionId": "fg2uyxOW",
+      "file": "cloth-config-fabric-26.3.159.jar",
+      "url": "https://cdn.modrinth.com/data/9s6osm5g/versions/fg2uyxOW/cloth-config-fabric-26.3.159.jar",
+      "sha1": "9a5cce069380a2047250831dcb19f4ef1b15872d",
+      "sha512": "8924e19d41845096724fa10f3717bc51964a0edbbbcad0ff1e6c6187a398b08f356e49579a657c2dc44a7f92e3850771f3ca70bf8c1f654de60425163b91dbb1",
+      "size": 1135009
+    },
+    {
+      "id": "badoptimizations",
+      "name": "BadOptimizations",
+      "version": "2.4.1",
+      "optional": true,
+      "project": "g96Z4WVZ",
+      "slug": "badoptimizations",
+      "versionId": "Sp0ctspw",
+      "file": "BadOptimizations-2.4.1-26.3-fabric.jar",
+      "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/Sp0ctspw/BadOptimizations-2.4.1-26.3-fabric.jar",
+      "sha1": "4cc25ce6217326ff14169f5358921773297e9475",
+      "sha512": "048a0979807afb96bae7801b7445746c985081bb55fab9b80b286036234a9869cc84f83c40ab77a2600b7e06ad44178ee17935b706b751c9b38f87ebc6e180f8",
+      "size": 60760
+    }
+  ]
+}

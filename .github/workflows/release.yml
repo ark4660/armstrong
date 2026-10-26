@@ -1,0 +1,62 @@
+# Publishes a release when a version tag is pushed:
+#   git tag v0.2.0 && git push origin v0.2.0
+# Launchers check the release's signed release.json and update themselves
+# and the client from it.
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+
+      - name: Version from tag
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Test
+        run: go vet ./... && go test ./...
+
+      - name: Build client mod
+        working-directory: client-mod
+        run: ./gradlew build --no-daemon -Pversion="$VERSION"
+
+      # Puts the mod jar (at its release URL) into the client manifests, which
+      # the launchers below embed, and copies them into dist/.
+      - name: Stamp client manifests
+        run: go run ./cmd/armstrong release manifest -version "$VERSION" -jar "client-mod/build/libs/armstrong-$VERSION.jar" -dist dist
+
+      - name: Build launchers
+        run: |
+          for p in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            os=${p%/*}; arch=${p#*/}
+            out="dist/armstrong-$os-$arch"; [ "$os" = windows ] && out="$out.exe"
+            CGO_ENABLED=0 GOOS=$os GOARCH=$arch go build -trimpath \
+              -ldflags "-s -w -X github.com/ark4660/armstrong/internal/app.Version=$VERSION" \
+              -o "$out" ./cmd/armstrong
+          done
+
+      - name: Write and sign release.json
+        env:
+          ARMSTRONG_SIGNING_KEY: ${{ secrets.ARMSTRONG_SIGNING_KEY }}
+        run: go run ./cmd/armstrong release index -version "$VERSION" -dist dist
+
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "Armstrong $VERSION" --generate-notes

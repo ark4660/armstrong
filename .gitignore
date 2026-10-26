@@ -1,0 +1,13 @@
+# Build output
+/armstrong
+/armstrong.exe
+/dist/
+*.part
+
+# Never commit signing keys or secrets
+*signing-key*
+*.key
+secrets.json
+
+# Personal working notes
+/HANDOFF.md
