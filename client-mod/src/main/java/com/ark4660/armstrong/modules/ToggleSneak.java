@@ -1,5 +1,7 @@
 package com.ark4660.armstrong.modules;
 
+import com.ark4660.armstrong.compat.Mc;
+
 import com.ark4660.armstrong.module.Category;
 import com.ark4660.armstrong.module.Indicator;
 import com.ark4660.armstrong.module.Module;
@@ -30,7 +32,7 @@ public final class ToggleSneak extends Module implements Indicator {
 				mc.options.keyShift.setDown(false);
 			}
 		}
-		if (toggled && mc.player != null && mc.gui.screen() == null) {
+		if (toggled && mc.player != null && Mc.screen() == null) {
 			mc.options.keyShift.setDown(true);
 		}
 	}

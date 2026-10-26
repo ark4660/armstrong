@@ -1,5 +1,7 @@
 package com.ark4660.armstrong.modules;
 
+import com.ark4660.armstrong.compat.Mc;
+
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -83,7 +85,7 @@ public final class ChatModules {
 			for (int i = 0; i < keys.length; i++) {
 				while (keys[i].consumeClick()) {
 					String text = messages[i].get().strip();
-					if (text.isEmpty() || mc.player == null || mc.getConnection() == null || mc.gui.screen() != null) {
+					if (text.isEmpty() || mc.player == null || mc.getConnection() == null || Mc.screen() != null) {
 						continue;
 					}
 					if (text.startsWith("/")) {

@@ -39,9 +39,9 @@ public final class ArmorHud extends HudModule.Text {
 				if (hideEmpty.get()) {
 					continue;
 				}
-				line.add("█".repeat(CELLS), Theme.TRACK).add("    -", Theme.MUTED);
+				line.bar(CELLS, Theme.TRACK).add("    -", Theme.MUTED);
 			} else if (!stack.isDamageableItem() || stack.getMaxDamage() <= 0) {
-				line.add("█".repeat(CELLS), Theme.accent()).add("    ∞", Theme.MUTED);
+				line.bar(CELLS, Theme.accent()).add("    ∞", Theme.MUTED);
 				any = true;
 			} else {
 				any = true;
@@ -49,7 +49,7 @@ public final class ArmorHud extends HudModule.Text {
 				int pct = (int) Math.round(frac * 100);
 				int filled = Math.clamp(Math.round(frac * CELLS), 0, CELLS);
 				int color = pct < 25 ? Theme.RED : pct < warnAt.get() ? Theme.AMBER : Theme.accent();
-				line.add("█".repeat((int) filled), color).add("█".repeat(CELLS - (int) filled), Theme.TRACK)
+				line.bar(filled, color).bar(CELLS - filled, Theme.TRACK)
 						.add(String.format("%5s", pct + "%"), Theme.TEXT);
 			}
 			out.add(line);

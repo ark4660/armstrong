@@ -1,14 +1,14 @@
 package com.ark4660.armstrong.home;
 
+import com.ark4660.armstrong.compat.Mc;
+
 import java.util.List;
 
 import com.ark4660.armstrong.ui.Term;
 import com.ark4660.armstrong.ui.Theme;
 import com.mojang.blaze3d.platform.InputConstants;
 
-import net.minecraft.SharedConstants;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.input.KeyEvent;
 
 /**
  * Home screen A, "boot terminal": wordmark, a boot log of what loaded, the
@@ -18,11 +18,10 @@ public final class BootHomeScreen extends HomeScreen {
 	private static final int ROW = 11;
 
 	@Override
-	public boolean keyPressed(KeyEvent event) {
-		if (handleSwitch(event)) {
+	protected boolean onKey(int key, int modifiers) {
+		if (handleSwitch(key)) {
 			return true;
 		}
-		int key = event.key();
 		switch (key) {
 			case InputConstants.KEY_UP -> selected = Math.floorMod(selected - 1, actions.size());
 			case InputConstants.KEY_DOWN -> selected = Math.floorMod(selected + 1, actions.size());
@@ -35,20 +34,19 @@ public final class BootHomeScreen extends HomeScreen {
 					run(actions.get(n));
 					return true;
 				}
-				return super.keyPressed(event);
+				return false;
 			}
 		}
 		return true;
 	}
 
 	@Override
-	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+	protected void drawBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 		background(g, delta, 0x9E050806);
 	}
 
 	@Override
-	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-		super.extractRenderState(g, mouseX, mouseY, delta);
+	protected void draw(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 		hits.clear();
 		int accent = Theme.accent();
 
@@ -57,7 +55,7 @@ public final class BootHomeScreen extends HomeScreen {
 		g.fill(0, 13, width, 14, Theme.BORDER);
 		new Term.Line().add("armstrong", accent).add("@client: ~", Theme.MUTED).draw(g, 8, 3);
 		Term.Line who = new Term.Line().add("user ", Theme.MUTED).add(minecraft.getUser().getName(), Theme.TEXT)
-				.add(" · mc ", Theme.MUTED).add(SharedConstants.getCurrentVersion().name(), Theme.TEXT);
+				.add(" · mc ", Theme.MUTED).add(Mc.versionName(), Theme.TEXT);
 		who.draw(g, width - 8 - who.width(), 3);
 
 		// Left column: wordmark, boot log, menu.

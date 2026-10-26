@@ -14,7 +14,11 @@ import com.ark4660.armstrong.ArmstrongClient;
 import com.ark4660.armstrong.modules.ChatModules;
 
 import net.minecraft.client.gui.components.ChatComponent;
+//? if >=26 {
 import net.minecraft.client.multiplayer.chat.GuiMessage;
+//?} else {
+/*import net.minecraft.client.GuiMessage;
+*///?}
 import net.minecraft.network.chat.Component;
 
 /** The Chat module: timestamps, [xN] for repeats, and a longer history. */
@@ -27,8 +31,13 @@ public abstract class ChatComponentMixin {
 	@Shadow
 	protected abstract void refreshTrimmedMessages();
 
+	//? if >=26 {
 	@ModifyVariable(method = "addMessage(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/MessageSignature;Lnet/minecraft/client/multiplayer/chat/GuiMessageSource;Lnet/minecraft/client/multiplayer/chat/GuiMessageTag;)V",
 			at = @At("HEAD"), argsOnly = true)
+	//?} else {
+	/*@ModifyVariable(method = "addMessage(Lnet/minecraft/network/chat/Component;Lnet/minecraft/network/chat/MessageSignature;Lnet/minecraft/client/GuiMessageTag;)V",
+			at = @At("HEAD"), argsOnly = true)
+	*///?}
 	private Component armstrong$decorate(Component message) {
 		ChatModules.Chat chat = ArmstrongClient.active(ChatModules.Chat.class);
 		if (chat == null) {

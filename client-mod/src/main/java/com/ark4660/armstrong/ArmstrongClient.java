@@ -1,5 +1,7 @@
 package com.ark4660.armstrong;
 
+import com.ark4660.armstrong.compat.Mc;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,12 +28,17 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
-import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.minecraft.world.InteractionResult;
+//? if >=26 {
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
+//?} else {
+/*import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+*///?}
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -73,40 +80,52 @@ public final class ArmstrongClient implements ClientModInitializer {
 		return Identifier.fromNamespaceAndPath(MOD_ID, path);
 	}
 
-	private static KeyMapping key(String name, int code, KeyMapping.Category category) {
+	// The controls-screen group for Armstrong's keys: a registered category in
+	// 26.x, a translation key before.
+	//? if >=26 {
+	private static KeyMapping.Category category;
+	//?} else {
+	/*private static final String category = "key.category.armstrong.armstrong";
+	*///?}
+
+	private static KeyMapping key(String name, int code) {
+		//? if >=26 {
 		return KeyMappingHelper.registerKeyMapping(new KeyMapping("key.armstrong." + name, code, category));
+		//?} else {
+		/*return KeyBindingHelper.registerKeyBinding(new KeyMapping("key.armstrong." + name, code, category));
+		*///?}
 	}
 
 	@Override
 	public void onInitializeClient() {
-		// 26.x key codes are SDL scancodes: use InputConstants names, never raw numbers.
-		KeyMapping.Category category = KeyMapping.Category.register(id(MOD_ID));
-		menuKey = KeyMappingHelper.registerKeyMapping(
-				new KeyMapping("key.armstrong.menu", InputConstants.KEY_RSHIFT, category));
-		KeyMapping zoomKey = KeyMappingHelper.registerKeyMapping(
-				new KeyMapping("key.armstrong.zoom", InputConstants.KEY_C, category));
+		// Key codes differ by version (SDL scancodes in 26.x, GLFW keys before):
+		// use InputConstants names, never raw numbers.
+		//? if >=26
+		category = KeyMapping.Category.register(id(MOD_ID));
+		menuKey = key("menu", InputConstants.KEY_RSHIFT);
+		KeyMapping zoomKey = key("zoom", InputConstants.KEY_C);
 
 		modules = new ModuleManager(FabricLoader.getInstance().getConfigDir().resolve("armstrong.json"));
-		KeyMapping snaplookKey = key("snaplook", InputConstants.KEY_V, category);
-		KeyMapping replayKey = key("replay_record", InputConstants.UNKNOWN.getValue(), category);
-		KeyMapping stopwatchKey = key("stopwatch", InputConstants.UNKNOWN.getValue(), category);
+		KeyMapping snaplookKey = key("snaplook", InputConstants.KEY_V);
+		KeyMapping replayKey = key("replay_record", InputConstants.UNKNOWN.getValue());
+		KeyMapping stopwatchKey = key("stopwatch", InputConstants.UNKNOWN.getValue());
 		KeyMapping[] autoTextKeys = {
-			key("auto_text_1", InputConstants.UNKNOWN.getValue(), category),
-			key("auto_text_2", InputConstants.UNKNOWN.getValue(), category),
-			key("auto_text_3", InputConstants.UNKNOWN.getValue(), category),
+			key("auto_text_1", InputConstants.UNKNOWN.getValue()),
+			key("auto_text_2", InputConstants.UNKNOWN.getValue()),
+			key("auto_text_3", InputConstants.UNKNOWN.getValue()),
 		};
 
 		// Registration order is the menu's order: HUD, movement, view, chat, client.
 		modules.register(new StatusHud());
-		EffectsHud effects = modules.register(new EffectsHud());
+		modules.register(new EffectsHud());
 		modules.register(new ArmorHud());
 		modules.register(new KeystrokesHud());
 		modules.register(new InfoHuds.ItemsHud());
 		InfoHuds.PvpInfo pvpInfo = modules.register(new InfoHuds.PvpInfo());
 		modules.register(new InfoHuds.Stopwatch(stopwatchKey));
 		modules.register(new InfoHuds.PackDisplay());
-		Crosshair crosshair = modules.register(new Crosshair());
-		HudTweaks hudTweaks = modules.register(new HudTweaks());
+		modules.register(new Crosshair());
+		modules.register(new HudTweaks());
 		modules.register(new ToggleSprint());
 		modules.register(new ToggleSneak());
 		zoom = modules.register(new Zoom(zoomKey));
@@ -133,32 +152,35 @@ public final class ArmstrongClient implements ClientModInitializer {
 
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> {
 			while (menuKey.consumeClick()) {
-				if (mc.gui.screen() == null) {
-					mc.setScreenAndShow(new ArmstrongScreen(modules, menuKey));
+				if (Mc.screen() == null) {
+					Mc.open(new ArmstrongScreen(modules, menuKey));
 				}
 			}
 			modules.tick(mc);
 		});
+		//? if >=26 {
 		HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, id("modules"),
 				(g, delta) -> modules.renderHud(g, Minecraft.getInstance()));
-		// The effects panel replaces the game's effect icons (a setting on the module).
-		HudElementRegistry.replaceElement(VanillaHudElements.MOB_EFFECTS, vanilla -> (g, delta) -> {
-			if (!effects.hidesVanilla()) {
-				vanilla.extractRenderState(g, delta);
-			}
+		HudElementRegistry.replaceElement(VanillaHudElements.MOB_EFFECTS,
+				vanilla -> (g, delta) -> HudHooks.effects(g, () -> vanilla.extractRenderState(g, delta)));
+		HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR,
+				vanilla -> (g, delta) -> HudHooks.crosshair(g, () -> vanilla.extractRenderState(g, delta)));
+		HudElementRegistry.replaceElement(VanillaHudElements.SCOREBOARD,
+				vanilla -> (g, delta) -> HudHooks.scoreboard(g, () -> vanilla.extractRenderState(g, delta)));
+		HudElementRegistry.replaceElement(VanillaHudElements.BOSS_BAR,
+				vanilla -> (g, delta) -> HudHooks.bossBar(g, () -> vanilla.extractRenderState(g, delta)));
+		HudElementRegistry.replaceElement(VanillaHudElements.TITLE_AND_SUBTITLE,
+				vanilla -> (g, delta) -> HudHooks.titles(g, () -> vanilla.extractRenderState(g, delta)));
+		//?} else {
+		/*// The vanilla elements go through HudHooks from HudMixin and BossBarMixin.
+		// The HUD is drawn in depth layers (200 apart): draw in front of them all.
+		HudRenderCallback.EVENT.register((g, delta) -> {
+			g.pose().pushPose();
+			g.pose().translate(0f, 0f, 4000f);
+			modules.renderHud(g, Minecraft.getInstance());
+			g.pose().popPose();
 		});
-		// The custom crosshair, shown where the game would show its own (first person).
-		HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR, vanilla -> (g, delta) -> {
-			Minecraft mc = Minecraft.getInstance();
-			if (!crosshair.isEnabled()) {
-				vanilla.extractRenderState(g, delta);
-			} else if (mc.options.getCameraType().isFirstPerson()) {
-				crosshair.draw(g);
-			}
-		});
-		HudElementRegistry.replaceElement(VanillaHudElements.SCOREBOARD, hudTweaks::scoreboard);
-		HudElementRegistry.replaceElement(VanillaHudElements.BOSS_BAR, hudTweaks::bossBar);
-		HudElementRegistry.replaceElement(VanillaHudElements.TITLE_AND_SUBTITLE, hudTweaks::titles);
+		*///?}
 		// Hits you make, for combo and reach.
 		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
 			if (level.isClientSide() && pvpInfo.isEnabled()) {

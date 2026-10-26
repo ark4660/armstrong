@@ -1,5 +1,8 @@
 package com.ark4660.armstrong.gui;
 
+import com.ark4660.armstrong.compat.CompatScreen;
+import com.ark4660.armstrong.compat.Mc;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -16,9 +19,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -26,7 +26,7 @@ import net.minecraft.network.chat.Component;
  * first: ↑↓ select, space toggles, enter edits, tab switches category,
  * / searches; in settings ←→ adjust and r resets. The mouse works too.
  */
-public final class ArmstrongScreen extends Screen {
+public final class ArmstrongScreen extends CompatScreen {
 	private static final int BAR = 13;       // title and footer bars
 	private static final int SIDEBAR = 96;
 	private static final int ROW = 12;
@@ -178,7 +178,7 @@ public final class ArmstrongScreen extends Screen {
 				if (dir == 0) {
 					editingText = t;
 					textBuffer = t.get();
-					minecraft.textInputManager().startTextInput(this);
+					startTyping();
 				}
 			}
 		}
@@ -192,14 +192,13 @@ public final class ArmstrongScreen extends Screen {
 			editingText.set(textBuffer.strip());
 		}
 		editingText = null;
-		minecraft.textInputManager().stopTextInput(this);
+		stopTyping();
 	}
 
 	// ---- input ----
 
 	@Override
-	public boolean keyPressed(KeyEvent event) {
-		int key = event.key();
+	protected boolean onKey(int key, int modifiers) {
 		if (editingText != null) {
 			switch (key) {
 				case InputConstants.KEY_RETURN -> stopTextEdit(true);
@@ -229,14 +228,14 @@ public final class ArmstrongScreen extends Screen {
 					}
 				}
 				default -> {
-					if (menuKey.matches(event)) {
+					if (Mc.isBound(menuKey, key)) {
 						onClose();
 					}
 				}
 			}
 			return true;
 		}
-		if (menuKey.matches(event)) {
+		if (Mc.isBound(menuKey, key)) {
 			onClose();
 			return true;
 		}
@@ -250,7 +249,7 @@ public final class ArmstrongScreen extends Screen {
 				case InputConstants.KEY_SPACE, InputConstants.KEY_RETURN -> adjust(0);
 				case InputConstants.KEY_R -> editing.reset();
 				default -> {
-					return super.keyPressed(event);
+					return false;
 				}
 			}
 			return true;
@@ -260,7 +259,7 @@ public final class ArmstrongScreen extends Screen {
 			case InputConstants.KEY_ESCAPE -> onClose();
 			case InputConstants.KEY_UP -> move(-1);
 			case InputConstants.KEY_DOWN -> move(1);
-			case InputConstants.KEY_TAB -> cycleCategory(event.modifiers() == 0 ? 1 : -1);
+			case InputConstants.KEY_TAB -> cycleCategory(modifiers == 0 ? 1 : -1);
 			case InputConstants.KEY_SLASH -> {
 				setSearching(true);
 				swallowSlash = true;
@@ -276,30 +275,29 @@ public final class ArmstrongScreen extends Screen {
 				}
 			}
 			default -> {
-				return super.keyPressed(event);
+				return false;
 			}
 		}
 		return true;
 	}
 
 	@Override
-	public boolean charTyped(CharacterEvent event) {
+	protected boolean onChar(String c, boolean allowedInChat) {
 		if (editingText != null) {
-			if (event.isAllowedChatCharacter() && textBuffer.length() < editingText.maxLength) {
-				textBuffer += event.codepointAsString();
+			if (allowedInChat && textBuffer.length() < editingText.maxLength) {
+				textBuffer += c;
 			}
 			return true;
 		}
 		if (!searching) {
 			return false;
 		}
-		String c = event.codepointAsString();
 		if (swallowSlash && c.equals("/")) {
 			swallowSlash = false;
 			return true;
 		}
 		swallowSlash = false;
-		if (event.isAllowedChatCharacter() && query.length() < 32) {
+		if (allowedInChat && query.length() < 32) {
 			query += c;
 			selected = 0;
 			scroll = 0;
@@ -308,17 +306,17 @@ public final class ArmstrongScreen extends Screen {
 	}
 
 	@Override
-	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-		if (event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
-			clickX = event.x();
+	protected boolean onClick(double x, double y, int button) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT) {
+			clickX = x;
 			for (int i = hits.size() - 1; i >= 0; i--) {
-				if (hits.get(i).contains(event.x(), event.y())) {
+				if (hits.get(i).contains(x, y)) {
 					hits.get(i).action().run();
 					return true;
 				}
 			}
 		}
-		return super.mouseClicked(event, doubleClick);
+		return false;
 	}
 
 	@Override
@@ -341,9 +339,9 @@ public final class ArmstrongScreen extends Screen {
 		}
 		searching = on;
 		if (on) {
-			minecraft.textInputManager().startTextInput(this);
+			startTyping();
 		} else {
-			minecraft.textInputManager().stopTextInput(this);
+			stopTyping();
 		}
 	}
 
@@ -368,15 +366,14 @@ public final class ArmstrongScreen extends Screen {
 	// ---- drawing ----
 
 	@Override
-	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-		super.extractBackground(g, mouseX, mouseY, delta);
+	protected void drawBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+		vanillaBackground(g, mouseX, mouseY, delta);
 		g.fill(x0, y0, x0 + w, y0 + h, Theme.WINDOW);
-		g.outline(x0, y0, w, h, Theme.accent());
+		Term.outline(g, x0, y0, w, h, Theme.accent());
 	}
 
 	@Override
-	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-		super.extractRenderState(g, mouseX, mouseY, delta);
+	protected void draw(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 		hits.clear();
 		int accent = Theme.accent();
 

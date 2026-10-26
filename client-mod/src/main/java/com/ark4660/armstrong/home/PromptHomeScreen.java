@@ -1,5 +1,7 @@
 package com.ark4660.armstrong.home;
 
+import com.ark4660.armstrong.compat.Mc;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -10,10 +12,7 @@ import com.ark4660.armstrong.ui.Theme;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.SharedConstants;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
-import net.minecraft.client.input.CharacterEvent;
-import net.minecraft.client.input.KeyEvent;
 
 /**
  * Home screen B, "minimal prompt": a centred wordmark and one shell prompt.
@@ -33,12 +32,12 @@ public final class PromptHomeScreen extends HomeScreen {
 	@Override
 	protected void init() {
 		super.init();
-		minecraft.textInputManager().startTextInput(this); // the prompt always takes typing
+		startTyping(); // the prompt always takes typing
 	}
 
 	@Override
 	public void removed() {
-		minecraft.textInputManager().stopTextInput(this);
+		stopTyping();
 		super.removed();
 	}
 
@@ -60,12 +59,12 @@ public final class PromptHomeScreen extends HomeScreen {
 	}
 
 	@Override
-	public boolean keyPressed(KeyEvent event) {
-		if (handleSwitch(event)) {
+	protected boolean onKey(int key, int modifiers) {
+		if (handleSwitch(key)) {
 			return true;
 		}
 		List<Action> list = matches();
-		switch (event.key()) {
+		switch (key) {
 			case InputConstants.KEY_UP -> selected = list.isEmpty() ? 0 : Math.floorMod(selected - 1, list.size());
 			case InputConstants.KEY_DOWN, InputConstants.KEY_TAB -> selected = list.isEmpty() ? 0 : Math.floorMod(selected + 1, list.size());
 			case InputConstants.KEY_RETURN -> {
@@ -84,19 +83,18 @@ public final class PromptHomeScreen extends HomeScreen {
 				selected = 0;
 			}
 			default -> {
-				return super.keyPressed(event);
+				return false;
 			}
 		}
 		return true;
 	}
 
 	@Override
-	public boolean charTyped(CharacterEvent event) {
-		String c = event.codepointAsString();
+	protected boolean onChar(String c, boolean allowedInChat) {
 		if (c.equals("`")) {
 			return true; // that's the layout switch, not text
 		}
-		if (event.isAllowedChatCharacter() && query.length() < 24) {
+		if (allowedInChat && query.length() < 24) {
 			query += c.toLowerCase(Locale.ROOT);
 			selected = 0;
 		}
@@ -104,13 +102,12 @@ public final class PromptHomeScreen extends HomeScreen {
 	}
 
 	@Override
-	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+	protected void drawBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 		background(g, delta, 0xC8050806);
 	}
 
 	@Override
-	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-		super.extractRenderState(g, mouseX, mouseY, delta);
+	protected void draw(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 		hits.clear();
 		int accent = Theme.accent();
 		List<Action> list = matches();
@@ -128,7 +125,7 @@ public final class PromptHomeScreen extends HomeScreen {
 		String fabric = FabricLoader.getInstance().getModContainer("fabricloader")
 				.map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("?");
 		Term.Line status = new Term.Line()
-				.add("minecraft " + SharedConstants.getCurrentVersion().name() + " · fabric " + fabric
+				.add("minecraft " + Mc.versionName() + " · fabric " + fabric
 						+ " · " + ArmstrongClient.modules().all().size() + " modules · signed in as ", Theme.MUTED)
 				.add(minecraft.getUser().getName(), accent);
 		status.draw(g, (width - status.width()) / 2, y);

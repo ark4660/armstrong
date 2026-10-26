@@ -34,12 +34,12 @@ jobs:
 
       - name: Build client mod
         working-directory: client-mod
-        run: ./gradlew build --no-daemon -Pversion="$VERSION"
+        run: ./gradlew buildAll --no-daemon -Pversion="$VERSION"
 
       # Puts the mod jar (at its release URL) into the client manifests, which
       # the launchers below embed, and copies them into dist/.
       - name: Stamp client manifests
-        run: go run ./cmd/armstrong release manifest -version "$VERSION" -jar "client-mod/build/libs/armstrong-$VERSION.jar" -dist dist
+        run: go run ./cmd/armstrong release manifest -version "$VERSION" -jar "client-mod/versions/{mc}/build/libs/armstrong-$VERSION+{mc}.jar" -dist dist
 
       - name: Build launchers
         run: |

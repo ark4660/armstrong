@@ -35,9 +35,9 @@ func fakeRelease(t *testing.T, version string) (dist string, srv *httptest.Serve
 	manifests := t.TempDir()
 	bundled, _ := os.ReadFile("../client/manifests/26.3.json")
 	os.WriteFile(filepath.Join(manifests, "26.3.json"), bundled, 0o644)
-	jar := filepath.Join(t.TempDir(), "mod.jar")
-	os.WriteFile(jar, []byte("client mod bytes"), 0o644)
-	if err := StampManifests(manifests, dist, version, jar); err != nil {
+	jars := t.TempDir()
+	os.WriteFile(filepath.Join(jars, "mod-26.3.jar"), []byte("client mod bytes"), 0o644)
+	if err := StampManifests(manifests, dist, version, filepath.Join(jars, "mod-{mc}.jar")); err != nil {
 		t.Fatal(err)
 	}
 	for _, p := range []string{"linux-amd64", "darwin-arm64", "windows-amd64"} {
@@ -58,7 +58,7 @@ func TestReleaseRoundTrip(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !r.Newer() || len(r.Launcher) != 3 || r.Client["26.3"].Name != "client-26.3.json" || r.Mod.Name != "armstrong-9.9.9.jar" {
+	if !r.Newer() || len(r.Launcher) != 3 || r.Client["26.3"].Name != "client-26.3.json" || r.Mods["26.3"].Name != "armstrong-9.9.9-mc26.3.jar" {
 		t.Fatalf("release = %+v", r)
 	}
 
@@ -69,7 +69,7 @@ func TestReleaseRoundTrip(t *testing.T) {
 	}
 	client.Init(app.Paths{Root: root})
 	m, err := client.Load("26.3")
-	if err != nil || m.Version != "9.9.9" || m.Mods[0].ID != client.ModID || !strings.HasSuffix(m.Mods[0].URL, "/armstrong-9.9.9.jar") {
+	if err != nil || m.Version != "9.9.9" || m.Mods[0].ID != client.ModID || !strings.HasSuffix(m.Mods[0].URL, "/armstrong-9.9.9-mc26.3.jar") {
 		t.Fatalf("cached manifest = %+v, %v", m, err)
 	}
 

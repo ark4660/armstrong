@@ -1,10 +1,25 @@
-plugins {
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
+// Applied to each Minecraft version in versions/; see settings.gradle.
+def unobfuscated = project.unobfuscated.toBoolean()
+apply plugin: unobfuscated ? 'net.fabricmc.fabric-loom' : 'net.fabricmc.fabric-loom-remap'
+
+def mc = project.minecraft_version
+def javaVersion = project.java_version as int
+
+// Type renames between Minecraft versions. The shared source is written with
+// the 26.x names; older builds get the old ones. Version-specific code that
+// isn't a plain rename uses //? if comments instead.
+stonecutter {
+	replacements.regex(current.parsed.matches('>=26')) {
+		replace '\\bGuiGraphics\\b', 'GuiGraphicsExtractor', '\\bGuiGraphicsExtractor\\b', 'GuiGraphics'
+		replace '\\bResourceLocation\\b', 'Identifier', '\\bIdentifier\\b', 'ResourceLocation'
+	}
 }
 
 base {
 	archivesName = 'armstrong'
 }
+// armstrong-<version>+<minecraft>.jar, so builds for different versions don't collide.
+version = "${rootProject.version}+${mc}"
 
 loom {
 	mods {
@@ -15,26 +30,32 @@ loom {
 }
 
 dependencies {
-	// Minecraft 26.x is unobfuscated: no mappings.
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	minecraft "com.mojang:minecraft:${mc}"
+	if (unobfuscated) {
+		implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+		implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	} else {
+		mappings loom.officialMojangMappings()
+		modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+		modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	}
 }
 
 processResources {
-	def version = project.version
-	inputs.property "version", version
-	filesMatching("fabric.mod.json") {
-		expand "version": version
+	def props = [version: rootProject.version, minecraft: mc, java: javaVersion]
+	inputs.properties props
+	filesMatching(["fabric.mod.json", "*.mixins.json"]) {
+		expand props
 	}
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
+	it.options.release = javaVersion
 	it.options.encoding = "UTF-8"
+	it.options.compilerArgs += ['-Xmaxerrs', '1000']
 }
 
 java {
-	sourceCompatibility = JavaVersion.VERSION_25
-	targetCompatibility = JavaVersion.VERSION_25
+	sourceCompatibility = JavaVersion.toVersion(javaVersion)
+	targetCompatibility = JavaVersion.toVersion(javaVersion)
 }

@@ -1,5 +1,7 @@
 package com.ark4660.armstrong.mixin;
 
+import com.ark4660.armstrong.compat.Mc;
+
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -12,6 +14,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
+//? if >=26
 import net.minecraft.client.input.MouseButtonInfo;
 
 /**
@@ -20,14 +23,25 @@ import net.minecraft.client.input.MouseButtonInfo;
  */
 @Mixin(MouseHandler.class)
 public class MouseHandlerMixin {
+	//? if >=26 {
 	@Inject(method = "onButton", at = @At("HEAD"))
 	private void armstrong$countClick(long window, MouseButtonInfo info, int action, CallbackInfo ci) {
-		if (action != InputConstants.PRESS || Minecraft.getInstance().gui.screen() != null) {
+		count(info.button(), action);
+	}
+	//?} else {
+	/*@Inject(method = "onPress", at = @At("HEAD"))
+	private void armstrong$countClick(long window, int button, int action, int mods, CallbackInfo ci) {
+		count(button, action);
+	}
+	*///?}
+
+	private static void count(int button, int action) {
+		if (action != InputConstants.PRESS || Mc.screen() != null) {
 			return;
 		}
-		if (info.button() == InputConstants.MOUSE_BUTTON_LEFT) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT) {
 			ClickCounter.click(true);
-		} else if (info.button() == InputConstants.MOUSE_BUTTON_RIGHT) {
+		} else if (button == InputConstants.MOUSE_BUTTON_RIGHT) {
 			ClickCounter.click(false);
 		}
 	}

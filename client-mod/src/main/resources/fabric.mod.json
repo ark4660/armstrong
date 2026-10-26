@@ -16,8 +16,8 @@
 	"mixins": ["armstrong.mixins.json"],
 	"depends": {
 		"fabricloader": ">=0.20.1",
-		"minecraft": "~26.3",
-		"java": ">=25",
+		"minecraft": "~${minecraft}",
+		"java": ">=${java}",
 		"fabric-api": "*"
 	}
 }

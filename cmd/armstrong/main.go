@@ -494,20 +494,24 @@ func cmdClient(ctx context.Context, paths app.Paths, args []string) error {
 	return os.WriteFile(*out, data, 0o644)
 }
 
-// cmdClientBuild builds the client mod with its Gradle wrapper, using the
-// Java 25 runtime the launcher already installs, and copies the jar into the
-// client layer's dev folder.
+// cmdClientBuild builds the client mod for one Minecraft version with its
+// Gradle wrapper and copies the jar into that version's client layer dev
+// folder. It builds with the newest Java runtime the launcher installs (the
+// default version's), which can target every older version's Java too.
 func cmdClientBuild(ctx context.Context, paths app.Paths, args []string) error {
 	fs := flag.NewFlagSet("client build", flag.ExitOnError)
 	src := fs.String("src", "client-mod", "client mod source directory")
 	mc := fs.String("mc", instance.DefaultMinecraft, "Minecraft version the build is for")
 	fs.Parse(args)
 
-	m, err := client.Load(*mc)
+	if _, err := client.Load(*mc); err != nil {
+		return err
+	}
+	newest, err := client.Load(instance.DefaultMinecraft)
 	if err != nil {
 		return err
 	}
-	v, err := install(ctx, paths, game.Spec{Minecraft: *mc, Loader: game.LoaderFabric, LoaderVersion: m.FabricLoader})
+	v, err := install(ctx, paths, game.Spec{Minecraft: newest.Minecraft, Loader: game.LoaderFabric, LoaderVersion: newest.FabricLoader})
 	if err != nil {
 		return err
 	}
@@ -515,7 +519,8 @@ func cmdClientBuild(ctx context.Context, paths app.Paths, args []string) error {
 	if runtime.GOOS == "windows" {
 		gradlew = "gradlew.bat"
 	}
-	cmd := exec.CommandContext(ctx, gradlew, "build", "--no-daemon")
+	// One Gradle project per Minecraft version (see client-mod/settings.gradle).
+	cmd := exec.CommandContext(ctx, gradlew, ":"+*mc+":build", "--no-daemon")
 	cmd.Dir = *src
 	// The Java runtime's bin dir holds java; JAVA_HOME is its parent.
 	cmd.Env = append(os.Environ(), "JAVA_HOME="+filepath.Dir(filepath.Dir(v.Java)))
@@ -524,10 +529,11 @@ func cmdClientBuild(ctx context.Context, paths app.Paths, args []string) error {
 		return fmt.Errorf("gradle build: %w", err)
 	}
 
-	jars, _ := filepath.Glob(filepath.Join(*src, "build", "libs", client.ModID+"-*.jar"))
+	libs := filepath.Join(*src, "versions", *mc, "build", "libs")
+	jars, _ := filepath.Glob(filepath.Join(libs, client.ModID+"-*.jar"))
 	jars = slices.DeleteFunc(jars, func(j string) bool { return strings.HasSuffix(j, "-sources.jar") })
 	if len(jars) == 0 {
-		return fmt.Errorf("no built jar in %s/build/libs", *src)
+		return fmt.Errorf("no built jar in %s", libs)
 	}
 	// Older builds (other versions) may still be there: take the one just built.
 	slices.SortFunc(jars, func(a, b string) int {
@@ -755,7 +761,7 @@ func cmdRelease(args []string) error {
 	}
 	fs := flag.NewFlagSet("release "+args[0], flag.ExitOnError)
 	version := fs.String("version", "", "release version, without the leading v")
-	jar := fs.String("jar", "", "the built client mod jar")
+	jar := fs.String("jar", "", "the built client mod jars, with {mc} for the Minecraft version")
 	dist := fs.String("dist", "dist", "release output folder")
 	manifests := fs.String("manifests", "internal/client/manifests", "client manifests to stamp")
 	fs.Parse(args[1:])
@@ -790,7 +796,7 @@ func cmdRelease(args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("release.json: %d launchers, %d client manifests, mod %s\n", len(r.Launcher), len(r.Client), r.Mod.Name)
+		fmt.Printf("release.json: %d launchers, %d client manifests, %d mod jars\n", len(r.Launcher), len(r.Client), len(r.Mods))
 		return nil
 	}
 	return fmt.Errorf("unknown release command %q", args[0])

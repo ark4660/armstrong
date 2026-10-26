@@ -1,12 +1,14 @@
 {
 	"required": true,
 	"package": "com.ark4660.armstrong.mixin",
-	"compatibilityLevel": "JAVA_25",
+	"compatibilityLevel": "JAVA_${java}",
 	"client": [
+		"BossBarMixin",
 		"CameraMixin",
 		"ChatComponentMixin",
 		"ClockMixin",
 		"GuiMixin",
+		"HudMixin",
 		"LevelWeatherMixin",
 		"LightmapMixin",
 		"MouseHandlerMixin",

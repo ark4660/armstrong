@@ -87,7 +87,11 @@ public final class StatusHud extends HudModule.Text {
 			}
 			if (biome.get() && mc.level != null) {
 				String name = mc.level.getBiome(mc.player.blockPosition()).unwrapKey()
+						//? if >=26 {
 						.map(k -> k.identifier().getPath()).orElse("?");
+						//?} else {
+						/*.map(k -> k.location().getPath()).orElse("?");
+						*///?}
 				out.add(row("biome", name, Theme.TEXT));
 			}
 		}

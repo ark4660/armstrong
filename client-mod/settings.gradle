@@ -9,4 +9,18 @@ pluginManagement {
 	}
 }
 
+plugins {
+	id 'dev.kikugie.stonecutter' version '0.9.8'
+}
+
+// One source tree, one build per Minecraft version. Code that differs
+// between versions is marked with //? comments (see README in this folder).
+stonecutter {
+	kotlinController = false
+	centralScript = 'build.gradle'
+	create(getRootProject()) {
+		versions '1.21.1', '26.3'
+	}
+}
+
 rootProject.name = 'armstrong'

@@ -10,9 +10,18 @@ import com.ark4660.armstrong.modules.Zoom;
 
 import net.minecraft.client.Camera;
 
-/** Narrows the world field of view while Zoom is active (the hand and HUD use a separate FOV). */
+/**
+ * Narrows the world field of view while Zoom is active (the hand and HUD use a
+ * separate FOV). Before 26.x the FOV lives in GameRenderer.getFov, whose
+ * boolean is false for the hand.
+ */
+//? if >=26 {
 @Mixin(Camera.class)
+//?} else {
+/*@Mixin(net.minecraft.client.renderer.GameRenderer.class)
+*///?}
 public class CameraMixin {
+	//? if >=26 {
 	@Inject(method = "getFov", at = @At("RETURN"), cancellable = true)
 	private void armstrong$zoom(CallbackInfoReturnable<Float> cir) {
 		Zoom zoom = ArmstrongClient.zoom();
@@ -20,4 +29,13 @@ public class CameraMixin {
 			cir.setReturnValue(cir.getReturnValueF() / zoom.divisor());
 		}
 	}
+	//?} else {
+	/*@Inject(method = "getFov", at = @At("RETURN"), cancellable = true)
+	private void armstrong$zoom(Camera camera, float partialTick, boolean world, CallbackInfoReturnable<Double> cir) {
+		Zoom zoom = ArmstrongClient.zoom();
+		if (world && zoom != null && zoom.active()) {
+			cir.setReturnValue(cir.getReturnValueD() / zoom.divisor());
+		}
+	}
+	*///?}
 }

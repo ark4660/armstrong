@@ -9,12 +9,17 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
+//? if >=26
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
 
 /** Drawing helpers for terminal-style text: spans of colored monospace text and panels. */
 public final class Term {
+	//? if >=26 {
 	public static final FontDescription MONO = new FontDescription.Resource(ArmstrongClient.id("mono"));
+	//?} else {
+	/*public static final net.minecraft.resources.Identifier MONO = ArmstrongClient.id("mono");
+	*///?}
 	public static final int LINE = 10; // line height in GUI pixels
 
 	private Term() {}
@@ -39,18 +44,37 @@ public final class Term {
 	}
 
 	public static void draw(GuiGraphicsExtractor g, String s, int x, int y, int color) {
+		//? if >=26 {
 		g.text(font(), text(s), x, y, color, false);
+		//?} else {
+		/*g.drawString(font(), text(s), x, y, color, false);
+		*///?}
 	}
 
-	/** A run of text in one color. */
-	public record Span(String text, int color) {}
+	/** A run of text in one color, or (bar) a solid block `text.length()` cells wide. */
+	public record Span(String text, int color, boolean bar) {
+		int width() {
+			return bar ? text.length() * cell() : Term.width(text);
+		}
+	}
 
 	/** A line made of colored spans, built fluently: new Line().add("fps ", MUTED).add("241", accent). */
 	public static final class Line {
 		final List<Span> spans = new ArrayList<>();
 
 		public Line add(String text, int color) {
-			spans.add(new Span(text, color));
+			spans.add(new Span(text, color, false));
+			return this;
+		}
+
+		/**
+		 * A solid bar `cells` characters wide, drawn as a rectangle: a block
+		 * glyph's height varies by version and font, so rows could merge.
+		 */
+		public Line bar(int cells, int color) {
+			if (cells > 0) {
+				spans.add(new Span(" ".repeat(cells), color, true));
+			}
 			return this;
 		}
 
@@ -62,15 +86,19 @@ public final class Term {
 		public int width() {
 			int w = 0;
 			for (Span s : spans) {
-				w += Term.width(s.text);
+				w += s.width();
 			}
 			return w;
 		}
 
 		public int draw(GuiGraphicsExtractor g, int x, int y) {
 			for (Span s : spans) {
-				Term.draw(g, s.text, x, y, s.color);
-				x += Term.width(s.text);
+				if (s.bar) {
+					g.fill(x, y, x + s.width(), y + 7, s.color);
+				} else {
+					Term.draw(g, s.text, x, y, s.color);
+				}
+				x += s.width();
 			}
 			return x;
 		}
@@ -79,7 +107,16 @@ public final class Term {
 	/** A HUD/menu box: translucent fill with a 1px border. */
 	public static void panel(GuiGraphicsExtractor g, int x, int y, int w, int h, int fill, int border) {
 		g.fill(x, y, x + w, y + h, fill);
-		g.outline(x, y, w, h, border);
+		outline(g, x, y, w, h, border);
+	}
+
+	/** A 1px rectangle outline. */
+	public static void outline(GuiGraphicsExtractor g, int x, int y, int w, int h, int color) {
+		//? if >=26 {
+		g.outline(x, y, w, h, color);
+		//?} else {
+		/*g.renderOutline(x, y, w, h, color);
+		*///?}
 	}
 
 	/** Pads with spaces to n characters (monospace columns). */

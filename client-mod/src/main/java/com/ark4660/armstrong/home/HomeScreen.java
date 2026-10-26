@@ -1,5 +1,11 @@
 package com.ark4660.armstrong.home;
 
+import com.ark4660.armstrong.compat.Pose;
+
+import com.ark4660.armstrong.compat.CompatScreen;
+
+import com.ark4660.armstrong.compat.Mc;
+
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,8 +31,6 @@ import net.minecraft.client.gui.screens.options.AccessibilityOptionsScreen;
 import net.minecraft.client.gui.screens.options.LanguageSelectScreen;
 import net.minecraft.client.gui.screens.options.OptionsScreen;
 import net.minecraft.client.gui.screens.worldselection.SelectWorldScreen;
-import net.minecraft.client.input.KeyEvent;
-import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.client.multiplayer.resolver.ServerAddress;
 import net.minecraft.network.chat.Component;
@@ -36,7 +40,7 @@ import net.minecraft.network.chat.Component;
  * the menu actions, the boot log, the dimmed panorama and the wordmark; the
  * two layouts only differ in how they arrange them. ` switches layouts.
  */
-public abstract class HomeScreen extends Screen {
+public abstract class HomeScreen extends CompatScreen {
 	public static final String COPYRIGHT = "Copyright Mojang AB. Do not distribute!";
 
 	static final String[] WORDMARK = {
@@ -85,13 +89,13 @@ public abstract class HomeScreen extends Screen {
 
 	private List<Action> buildActions() {
 		List<Action> out = new ArrayList<>();
-		out.add(new Action("singleplayer", "./play --local", () -> minecraft.setScreenAndShow(new SelectWorldScreen(this)), "play", "sp", "worlds"));
-		out.add(new Action("multiplayer", "./play --online", () -> minecraft.setScreenAndShow(new JoinMultiplayerScreen(this)), "online", "mp", "servers"));
+		out.add(new Action("singleplayer", "./play --local", () -> Mc.open(new SelectWorldScreen(this)), "play", "sp", "worlds"));
+		out.add(new Action("multiplayer", "./play --online", () -> Mc.open(new JoinMultiplayerScreen(this)), "online", "mp", "servers"));
 		Recent r = Recent.get();
 		if (r.world != null) {
 			Recent.Entry w = r.world;
 			out.add(new Action("continue", w.name + " · " + Recent.ago(w.time),
-					() -> minecraft.createWorldOpenFlows().openWorld(w.id, () -> minecraft.setScreenAndShow(this)), "resume", "last"));
+					() -> minecraft.createWorldOpenFlows().openWorld(w.id, () -> Mc.open(this)), "resume", "last"));
 		}
 		if (r.server != null) {
 			Recent.Entry s = r.server;
@@ -99,21 +103,21 @@ public abstract class HomeScreen extends Screen {
 					() -> ConnectScreen.startConnecting(this, minecraft, ServerAddress.parseString(s.id),
 							new ServerData(s.name, s.id, ServerData.Type.OTHER), false, null), "reconnect", "server"));
 		}
-		out.add(new Action("realms", "", () -> minecraft.setScreenAndShow(new RealmsMainScreen(this))));
+		out.add(new Action("realms", "", () -> Mc.open(new RealmsMainScreen(this))));
 		if (Flashback.installed()) {
 			out.add(new Action("replays", "flashback", () -> {
 				Screen s = Flashback.replayScreen(this);
 				if (s != null) {
-					minecraft.setScreenAndShow(s);
+					Mc.open(s);
 				}
 			}, "replay", "watch"));
 		}
-		out.add(new Action("armstrong", "~/modules", () -> minecraft.setScreenAndShow(
+		out.add(new Action("armstrong", "~/modules", () -> Mc.open(
 				new ArmstrongScreen(ArmstrongClient.modules(), ArmstrongClient.menuKey())), "modules", "mods"));
-		out.add(new Action("options", "", () -> minecraft.setScreenAndShow(new OptionsScreen(this, minecraft.options)), "settings"));
-		out.add(new Action("language", "", () -> minecraft.setScreenAndShow(
+		out.add(new Action("options", "", () -> Mc.open(new OptionsScreen(this, minecraft.options)), "settings"));
+		out.add(new Action("language", "", () -> Mc.open(
 				new LanguageSelectScreen(this, minecraft.options, minecraft.getLanguageManager())), "lang"));
-		out.add(new Action("accessibility", "", () -> minecraft.setScreenAndShow(new AccessibilityOptionsScreen(this, minecraft.options)), "a11y"));
+		out.add(new Action("accessibility", "", () -> Mc.open(new AccessibilityOptionsScreen(this, minecraft.options)), "a11y"));
 		out.add(new Action("quit", "", () -> minecraft.stop(), "exit"));
 		return out;
 	}
@@ -166,14 +170,14 @@ public abstract class HomeScreen extends Screen {
 	// ---- input shared by both layouts ----
 
 	/** ` switches to the other layout (a developer toggle while choosing one). */
-	protected boolean handleSwitch(KeyEvent event) {
-		if (event.key() != InputConstants.KEY_GRAVE) {
+	protected boolean handleSwitch(int key) {
+		if (key != InputConstants.KEY_GRAVE) {
 			return false;
 		}
 		Interface ui = ArmstrongClient.ui();
 		ui.setHomeScreen(this instanceof BootHomeScreen ? Interface.HOME_PROMPT : Interface.HOME_BOOT);
 		ArmstrongClient.modules().save();
-		minecraft.setScreenAndShow(HomeScreens.create(ui.homeScreen()));
+		Mc.open(HomeScreens.create(ui.homeScreen()));
 		return true;
 	}
 
@@ -182,11 +186,11 @@ public abstract class HomeScreen extends Screen {
 	}
 
 	@Override
-	public boolean mouseClicked(MouseButtonEvent event, boolean doubleClick) {
-		if (event.button() == InputConstants.MOUSE_BUTTON_LEFT && hits.click(event.x(), event.y())) {
+	protected boolean onClick(double x, double y, int button) {
+		if (button == InputConstants.MOUSE_BUTTON_LEFT && hits.click(x, y)) {
 			return true;
 		}
-		return super.mouseClicked(event, doubleClick);
+		return false;
 	}
 
 	@Override
@@ -198,7 +202,7 @@ public abstract class HomeScreen extends Screen {
 
 	/** The vanilla panorama, crisp but dimmed so the terminal text reads. */
 	protected void background(GuiGraphicsExtractor g, float delta, int dim) {
-		extractPanorama(g, delta);
+		panorama(g, delta);
 		g.fill(0, 0, width, height, dim);
 	}
 
@@ -206,13 +210,13 @@ public abstract class HomeScreen extends Screen {
 	protected int wordmark(GuiGraphicsExtractor g, int x, int y, int maxWidth, float maxScale) {
 		int w = Term.width(WORDMARK[0]);
 		float s = Math.min(maxScale, (float) maxWidth / w);
-		g.pose().pushMatrix();
-		g.pose().translate(x, y);
-		g.pose().scale(s, s);
+		Pose.push(g);
+		Pose.translate(g, x, y);
+		Pose.scale(g, s);
 		for (int i = 0; i < WORDMARK.length; i++) {
 			Term.draw(g, WORDMARK[i], 0, i * WORDMARK_ROW, Theme.accent());
 		}
-		g.pose().popMatrix();
+		Pose.pop(g);
 		return Math.round(WORDMARK.length * WORDMARK_ROW * s);
 	}
 

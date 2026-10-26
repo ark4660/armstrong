@@ -1,5 +1,7 @@
 package com.ark4660.armstrong.modules;
 
+import com.ark4660.armstrong.compat.Mc;
+
 import com.ark4660.armstrong.module.Category;
 import com.ark4660.armstrong.module.Indicator;
 import com.ark4660.armstrong.module.Module;
@@ -8,9 +10,10 @@ import com.ark4660.armstrong.module.Setting;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+//? if >=26 {
 import net.minecraft.client.gui.components.debug.DebugScreenEntries;
 import net.minecraft.client.gui.components.debug.DebugScreenEntryStatus;
-import net.minecraft.resources.Identifier;
+//?}
 
 /** Small view modules. The heavy lifting is in the mixins that read them. */
 public final class ViewModules {
@@ -94,13 +97,13 @@ public final class ViewModules {
 	}
 
 	/** Switches one of the game's debug renderers (F3 toggles) with the module. */
-	public static class DebugToggle extends Module {
-		private final Identifier entry;
-
-		protected DebugToggle(String id, String name, String description, Identifier entry) {
+	public abstract static class DebugToggle extends Module {
+		protected DebugToggle(String id, String name, String description) {
 			super(id, name, description, Category.VIEW, false);
-			this.entry = entry;
 		}
+
+		/** Turns the game's renderer on or off. */
+		protected abstract void set(Minecraft mc, boolean on);
 
 		private boolean applied;
 
@@ -109,7 +112,7 @@ public final class ViewModules {
 		@Override
 		public void tick(Minecraft mc) {
 			if (!applied) {
-				mc.debugEntries.setStatus(entry, DebugScreenEntryStatus.ALWAYS_ON);
+				set(mc, true);
 				applied = true;
 			}
 		}
@@ -117,7 +120,7 @@ public final class ViewModules {
 		@Override
 		protected void onDisable() {
 			if (applied) {
-				Minecraft.getInstance().debugEntries.setStatus(entry, DebugScreenEntryStatus.NEVER);
+				set(Minecraft.getInstance(), false);
 				applied = false;
 			}
 		}
@@ -125,13 +128,33 @@ public final class ViewModules {
 
 	public static final class Hitboxes extends DebugToggle {
 		public Hitboxes() {
-			super("hitboxes", "Hitboxes", "Show entity hitboxes (like F3+B).", DebugScreenEntries.ENTITY_HITBOXES);
+			super("hitboxes", "Hitboxes", "Show entity hitboxes (like F3+B).");
+		}
+
+		@Override
+		protected void set(Minecraft mc, boolean on) {
+			//? if >=26 {
+			mc.debugEntries.setStatus(DebugScreenEntries.ENTITY_HITBOXES, on ? DebugScreenEntryStatus.ALWAYS_ON : DebugScreenEntryStatus.NEVER);
+			//?} else {
+			/*mc.getEntityRenderDispatcher().setRenderHitBoxes(on);
+			*///?}
 		}
 	}
 
 	public static final class ChunkBorders extends DebugToggle {
 		public ChunkBorders() {
-			super("chunk_borders", "Chunk Borders", "Show chunk borders (like F3+G).", DebugScreenEntries.CHUNK_BORDERS);
+			super("chunk_borders", "Chunk Borders", "Show chunk borders (like F3+G).");
+		}
+
+		@Override
+		protected void set(Minecraft mc, boolean on) {
+			//? if >=26 {
+			mc.debugEntries.setStatus(DebugScreenEntries.CHUNK_BORDERS, on ? DebugScreenEntryStatus.ALWAYS_ON : DebugScreenEntryStatus.NEVER);
+			//?} else {
+			/*if (mc.debugRenderer.switchRenderChunkborder() != on) {
+				mc.debugRenderer.switchRenderChunkborder(); // it only toggles
+			}
+			*///?}
 		}
 	}
 
@@ -152,7 +175,7 @@ public final class ViewModules {
 
 		@Override
 		public void tick(Minecraft mc) {
-			boolean held = key.isDown() && mc.gui.screen() == null;
+			boolean held = Mc.held(key) && Mc.screen() == null;
 			if (held && before == null) {
 				before = mc.options.getCameraType();
 				mc.options.setCameraType(CameraType.THIRD_PERSON_FRONT);

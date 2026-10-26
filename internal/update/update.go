@@ -39,7 +39,7 @@ type Release struct {
 	Version  string           `json:"version"`  // without the leading v
 	Launcher map[string]Asset `json:"launcher"` // by platform, e.g. "linux-amd64"
 	Client   map[string]Asset `json:"client"`   // client manifests by Minecraft version
-	Mod      Asset            `json:"mod"`      // the client mod jar (also listed in the manifests)
+	Mods     map[string]Asset `json:"mods"`     // client mod jars by Minecraft version (also listed in the manifests)
 }
 
 type Asset struct {

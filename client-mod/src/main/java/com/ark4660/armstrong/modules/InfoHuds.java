@@ -150,8 +150,11 @@ public final class InfoHuds {
 				count(out, inv, "gapples", Items.GOLDEN_APPLE, Items.ENCHANTED_GOLDEN_APPLE);
 			}
 			if (cooldown.get()) {
-				ItemStack pearl = new ItemStack(Items.ENDER_PEARL);
-				float pct = mc.player.getCooldowns().getCooldownPercent(pearl, 0f);
+				//? if >=26 {
+				float pct = mc.player.getCooldowns().getCooldownPercent(new ItemStack(Items.ENDER_PEARL), 0f);
+				//?} else {
+				/*float pct = mc.player.getCooldowns().getCooldownPercent(Items.ENDER_PEARL, 0f);
+				*///?}
 				if (pct > 0) {
 					out.add(new Term.Line().add(Term.pad("pearl", 8), Theme.MUTED).append(Term.bar(1 - pct, 8, Theme.AMBER)));
 				}
