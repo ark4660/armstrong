@@ -16,6 +16,7 @@ public abstract class Module {
 
 	private final boolean enabledByDefault;
 	private boolean enabled;
+	private String blockedBy; // the server that switched this module off, if any
 	private final List<Setting<?>> settings = new ArrayList<>();
 
 	protected Module(String id, String name, String description, Category category, boolean enabledByDefault) {
@@ -36,18 +37,44 @@ public abstract class Module {
 		return Collections.unmodifiableList(settings);
 	}
 
+	/** The player's choice (what the menu shows and the config saves). */
 	public boolean isEnabled() {
 		return enabled;
+	}
+
+	/** Whether it's actually running: enabled and not blocked by the server. */
+	public boolean isActive() {
+		return enabled && blockedBy == null;
+	}
+
+	/** The server blocking this module, or null. */
+	public String blockedBy() {
+		return blockedBy;
+	}
+
+	/**
+	 * Blocks the module on a server that doesn't allow it (null unblocks).
+	 * The player's choice is kept, so it comes back on other servers.
+	 */
+	public void setBlocked(String server) {
+		boolean wasActive = isActive();
+		blockedBy = server;
+		if (wasActive && !isActive()) {
+			onDisable();
+		} else if (!wasActive && isActive()) {
+			onEnable();
+		}
 	}
 
 	public void setEnabled(boolean on) {
 		if (on == enabled || (!on && !canDisable())) {
 			return;
 		}
+		boolean wasActive = isActive();
 		enabled = on;
-		if (on) {
+		if (!wasActive && isActive()) {
 			onEnable();
-		} else {
+		} else if (wasActive && !isActive()) {
 			onDisable();
 		}
 	}

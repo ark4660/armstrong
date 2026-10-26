@@ -6,13 +6,15 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.ark4660.armstrong.ArmstrongClient;
+import com.ark4660.armstrong.compat.Mc;
+import com.ark4660.armstrong.modules.Freelook;
 import com.ark4660.armstrong.modules.ViewModules;
 import com.ark4660.armstrong.modules.Zoom;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 
 import net.minecraft.client.render.GameRenderer;
 
-/** Zoom narrows the world FOV; Fullbright raises the gamma the lightmap reads. */
+/** Zoom narrows the world FOV; Fullbright raises the gamma the lightmap reads; Freelook moves the camera. */
 @Mixin(GameRenderer.class)
 public class GameRendererMixin {
 	// changingFov is false for the hand, which keeps its own FOV.
@@ -22,6 +24,27 @@ public class GameRendererMixin {
 		if (changingFov && zoom != null && zoom.active()) {
 			cir.setReturnValue(cir.getReturnValueF() / zoom.divisor());
 		}
+		if (changingFov) {
+			Mc.fov = cir.getReturnValueF(); // for waypoint markers
+		}
+	}
+
+	// Freelook: while the camera is placed, the view entity's angles read as
+	// Freelook's. Current and previous both, so there's no interpolation.
+	@ModifyExpressionValue(method = "transformCamera", at = {
+			@At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;yaw:F"),
+			@At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;prevYaw:F")})
+	private float armstrong$freelookYaw(float yaw) {
+		Freelook f = ArmstrongClient.active(Freelook.class);
+		return f != null && f.active() ? f.yaw() : yaw;
+	}
+
+	@ModifyExpressionValue(method = "transformCamera", at = {
+			@At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;pitch:F"),
+			@At(value = "FIELD", target = "Lnet/minecraft/entity/Entity;prevPitch:F")})
+	private float armstrong$freelookPitch(float pitch) {
+		Freelook f = ArmstrongClient.active(Freelook.class);
+		return f != null && f.active() ? f.pitch() : pitch;
 	}
 
 	@ModifyExpressionValue(method = "updateLightmap", at = @At(value = "FIELD", target = "Lnet/minecraft/client/option/GameOptions;gamma:F"))

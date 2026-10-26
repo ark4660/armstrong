@@ -25,7 +25,7 @@ public final class EffectsHud extends HudModule.Text {
 
 	/** Whether the game's own effect icons should be hidden. */
 	public boolean hidesVanilla() {
-		return isEnabled() && hideVanilla.get();
+		return isActive() && hideVanilla.get();
 	}
 
 	@Override

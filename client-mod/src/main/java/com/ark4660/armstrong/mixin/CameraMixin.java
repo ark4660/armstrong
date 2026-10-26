@@ -6,6 +6,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.ark4660.armstrong.ArmstrongClient;
+import com.ark4660.armstrong.compat.Mc;
 import com.ark4660.armstrong.modules.Zoom;
 
 import net.minecraft.client.Camera;
@@ -28,6 +29,7 @@ public class CameraMixin {
 		if (zoom != null && zoom.active()) {
 			cir.setReturnValue(cir.getReturnValueF() / zoom.divisor());
 		}
+		Mc.fov = cir.getReturnValueF(); // for waypoint markers
 	}
 	//?} else {
 	/*@Inject(method = "getFov", at = @At("RETURN"), cancellable = true)
@@ -35,6 +37,9 @@ public class CameraMixin {
 		Zoom zoom = ArmstrongClient.zoom();
 		if (world && zoom != null && zoom.active()) {
 			cir.setReturnValue(cir.getReturnValueD() / zoom.divisor());
+		}
+		if (world) {
+			Mc.fov = (float) cir.getReturnValueD(); // for waypoint markers
 		}
 	}
 	*///?}

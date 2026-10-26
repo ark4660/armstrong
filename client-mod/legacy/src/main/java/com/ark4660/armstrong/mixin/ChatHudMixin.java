@@ -33,6 +33,10 @@ public abstract class ChatHudMixin {
 
 	@Inject(method = "addMessage(Lnet/minecraft/text/Text;)V", at = @At("HEAD"), cancellable = true)
 	private void armstrong$decorate(Text message, CallbackInfo ci) {
+		ChatModules.AutoGG gg = ArmstrongClient.active(ChatModules.AutoGG.class);
+		if (gg != null) {
+			gg.onServerMessage(message);
+		}
 		ChatModules.Chat chat = ArmstrongClient.active(ChatModules.Chat.class);
 		if (chat == null) {
 			return;

@@ -25,7 +25,8 @@ import net.minecraft.util.SharedConstants;
 /**
  * The Armstrong menu (Right Shift), drawn as a terminal window. Keyboard
  * first: ↑↓ select, space toggles, enter edits, tab switches category,
- * / searches; in settings ←→ adjust and r resets. The mouse works too.
+ * / searches, e opens the HUD editor; in settings ←→ adjust and r resets.
+ * The mouse works too.
  */
 public final class ArmstrongScreen extends Screen {
 	private static final int BAR = 13;       // title and footer bars
@@ -46,6 +47,7 @@ public final class ArmstrongScreen extends Screen {
 
 	private Module editing;
 	private int settingRow;
+	private int settingScroll; // first settings row shown
 	private Setting.Text editingText; // a text setting being typed into
 	private String textBuffer = "";
 
@@ -109,6 +111,14 @@ public final class ArmstrongScreen extends Screen {
 		return Mc.keyName(k);
 	}
 
+	/** [on ], [off], or [blk] when the server blocks a module that's on. */
+	private static String state(Module m) {
+		if (!m.isEnabled()) {
+			return "[off]";
+		}
+		return m.blockedBy() != null ? "[blk]" : "[on ]";
+	}
+
 	private static String choiceText(String v) {
 		return v.toLowerCase(Locale.ROOT).replace(' ', '-');
 	}
@@ -155,6 +165,7 @@ public final class ArmstrongScreen extends Screen {
 	private void open(Module m) {
 		editing = m;
 		settingRow = 0;
+		settingScroll = 0;
 	}
 
 	/** Changes the selected setting: dir -1/+1 for ←→, 0 for space/enter. */
@@ -278,6 +289,7 @@ public final class ArmstrongScreen extends Screen {
 			case Keyboard.KEY_DOWN -> move(1);
 			case Keyboard.KEY_TAB -> cycleCategory(modifiers == 0 ? 1 : -1);
 			case Keyboard.KEY_SLASH -> setSearching(true);
+			case Keyboard.KEY_E -> openHudEditor();
 			case Keyboard.KEY_SPACE -> {
 				if (m != null) {
 					m.toggle();
@@ -293,6 +305,11 @@ public final class ArmstrongScreen extends Screen {
 			}
 		}
 		return true;
+	}
+
+	private void openHudEditor() {
+		modules.save();
+		Mc.open(new HudEditorScreen(modules, menuKey, this));
 	}
 
 	private boolean onChar(String c, boolean allowedInChat) {
@@ -390,7 +407,7 @@ public final class ArmstrongScreen extends Screen {
 		Term.Line hints = new Term.Line();
 		String[][] keys = searching ? new String[][]{{"type", "filter"}, {"enter", "done"}, {"esc", "clear"}}
 				: editing != null ? new String[][]{{"↑↓", "select"}, {"←→", "adjust"}, {"space", "toggle"}, {"r", "reset"}, {"esc", "back"}}
-				: new String[][]{{"↑↓", "select"}, {"space", "toggle"}, {"enter", "edit"}, {"tab", "category"}, {"/", "search"}, {"rshift", "close"}};
+				: new String[][]{{"↑↓", "select"}, {"space", "toggle"}, {"enter", "edit"}, {"e", "hud editor"}, {"tab", "category"}, {"/", "search"}, {"rshift", "close"}};
 		int room = w - 12;
 		for (String[] k : keys) {
 			Term.Line hint = new Term.Line().add(k[0], Theme.AMBER).add(" " + k[1] + "  ", Theme.MUTED);
@@ -461,7 +478,7 @@ public final class ArmstrongScreen extends Screen {
 
 		List<Module> list = visible();
 		Module sel = current();
-		int descTop = y0 + h - BAR - 4 * ROW;
+		int descTop = y0 + h - BAR - 4 * ROW - 4; // id, two description lines, a status line
 		int fits = Math.max(1, (descTop - y - 4) / ROW);
 		if (selected < scroll) {
 			scroll = selected;
@@ -476,7 +493,7 @@ public final class ArmstrongScreen extends Screen {
 				g.fill(x, y - 2, x + cw, y + ROW - 2, Theme.accentDim());
 			}
 			new Term.Line().add(isSel ? "> " : "  ", Theme.AMBER)
-					.add(m.isEnabled() ? "[on ]" : "[off]", m.isEnabled() ? accent : Theme.MUTED)
+					.add(state(m), m.blockedBy() != null && m.isEnabled() ? Theme.RED : m.isEnabled() ? accent : Theme.MUTED)
 					.add("  " + Term.pad(m.id, 15) + Term.pad(m.category.title, 10) + keyName(m.key()), isSel ? Theme.BRIGHT : Theme.TEXT)
 					.draw(g, x + 2, y);
 			final int index = i;
@@ -501,11 +518,19 @@ public final class ArmstrongScreen extends Screen {
 		// Description of the selected module.
 		g.fill(x, descTop, x + cw, descTop + 1, Theme.RULE);
 		if (sel != null) {
-			int dy = descTop + 5;
+			int dy = descTop + 4;
 			Term.draw(g, "# " + sel.id, x, dy, Theme.MUTED);
-			Term.draw(g, sel.description.toLowerCase(Locale.ROOT), x, dy + ROW, Theme.TEXT);
+			List<String> desc = Term.wrap(sel.description.toLowerCase(Locale.ROOT), cw, 2);
+			for (int i = 0; i < desc.size(); i++) {
+				Term.draw(g, desc.get(i), x, dy + (i + 1) * ROW, Theme.TEXT);
+			}
 			int n = sel.settings().size();
-			Term.draw(g, n + " setting" + (n == 1 ? "" : "s") + " · enter to edit", x, dy + 2 * ROW, Theme.MUTED);
+			int sy = dy + (desc.size() + 1) * ROW;
+			if (sel.blockedBy() != null) {
+				Term.draw(g, Term.fit("blocked on " + sel.blockedBy() + " (server rules) · stays on elsewhere", cw), x, sy, Theme.RED);
+			} else {
+				Term.draw(g, n + " setting" + (n == 1 ? "" : "s") + " · enter to edit", x, sy, Theme.MUTED);
+			}
 		}
 	}
 
@@ -515,8 +540,11 @@ public final class ArmstrongScreen extends Screen {
 		int y = y0 + BAR + 6;
 		new Term.Line().add("$ ", accent).add("armstrong config " + m.id, Theme.TEXT).draw(g, x, y);
 		y += ROW;
-		Term.draw(g, "# " + m.description.toLowerCase(Locale.ROOT), x, y, Theme.MUTED);
-		y += ROW + 6;
+		for (String line : Term.wrap("# " + m.description.toLowerCase(Locale.ROOT), cw, 2)) {
+			Term.draw(g, line, x, y, Theme.MUTED);
+			y += ROW;
+		}
+		y += 6;
 
 		int nameW = "enabled".length();
 		for (Setting<?> s : m.settings()) {
@@ -525,7 +553,23 @@ public final class ArmstrongScreen extends Screen {
 		nameW += 2;
 		int rows = settingRows(m);
 		settingRow = Math.clamp(settingRow, 0, rows - 1);
-		for (int r = 0; r < rows; r++) {
+		// Rows that fit above the footer note; the view follows the selection.
+		// When they don't all fit, the last line says which ones are shown.
+		int fits = Math.max(1, (y0 + h - BAR - ROW - 6 - y) / ROW);
+		if (rows > fits) {
+			fits = Math.max(1, fits - 1);
+		}
+		if (settingRow < settingScroll) {
+			settingScroll = settingRow;
+		} else if (settingRow >= settingScroll + fits) {
+			settingScroll = settingRow - fits + 1;
+		}
+		settingScroll = Math.clamp(settingScroll, 0, Math.max(0, rows - fits));
+		if (rows > fits) {
+			int last = Math.min(rows, settingScroll + fits);
+			Term.draw(g, "  " + (settingScroll + 1) + "-" + last + " of " + rows + " · scroll for more", x, y + fits * ROW, Theme.MUTED);
+		}
+		for (int r = settingScroll; r < rows && r < settingScroll + fits; r++) {
 			boolean isSel = r == settingRow;
 			if (isSel) {
 				g.fill(x, y - 2, x + cw, y + ROW - 2, Theme.accentDim());

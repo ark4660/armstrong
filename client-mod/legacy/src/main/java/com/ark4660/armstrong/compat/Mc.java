@@ -14,6 +14,46 @@ import net.minecraft.client.option.KeyBinding;
 public final class Mc {
 	private Mc() {}
 
+	/** The world field of view last used for rendering, after zoom (GameRendererMixin). */
+	public static volatile float fov = 70f;
+
+	/** The frame's partial tick, set before the HUD is drawn (for smooth markers). */
+	public static volatile float partialTick;
+
+	/** Where the camera is: its position and angles (yaw 0 = south, pitch + = down). */
+	public record View(net.minecraft.util.math.Vec3d pos, float yaw, float pitch) {}
+
+	/** The camera, from the view entity's eyes (third person's pull-back is ignored). */
+	public static View view() {
+		MinecraftClient mc = MinecraftClient.getInstance();
+		net.minecraft.entity.Entity e = mc.getCameraEntity();
+		float t = partialTick;
+		double x = e.prevX + (e.x - e.prevX) * t;
+		double y = e.prevY + (e.y - e.prevY) * t + e.getEyeHeight();
+		double z = e.prevZ + (e.z - e.prevZ) * t;
+		com.ark4660.armstrong.modules.Freelook f = com.ark4660.armstrong.ArmstrongClient.active(com.ark4660.armstrong.modules.Freelook.class);
+		if (f != null && f.active()) {
+			return new View(new net.minecraft.util.math.Vec3d(x, y, z), f.yaw(), f.pitch());
+		}
+		return new View(new net.minecraft.util.math.Vec3d(x, y, z),
+				e.prevYaw + (e.yaw - e.prevYaw) * t, e.prevPitch + (e.pitch - e.prevPitch) * t);
+	}
+
+	/** The dimension's id, named like the modern ones (minecraft:the_nether). */
+	public static String dimension(net.minecraft.world.World world) {
+		return switch (world.dimension.getType()) {
+			case -1 -> "minecraft:the_nether";
+			case 1 -> "minecraft:the_end";
+			case 0 -> "minecraft:overworld";
+			default -> "dim:" + world.dimension.getType();
+		};
+	}
+
+	/** Whether an Alt key is held. */
+	public static boolean altDown() {
+		return Keyboard.isKeyDown(Keyboard.KEY_LMENU) || Keyboard.isKeyDown(Keyboard.KEY_RMENU);
+	}
+
 	/** The open screen, or null in-game. */
 	public static Screen screen() {
 		return MinecraftClient.getInstance().currentScreen;

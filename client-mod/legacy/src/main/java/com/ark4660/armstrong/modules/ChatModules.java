@@ -99,4 +99,62 @@ public final class ChatModules {
 			}
 		}
 	}
+
+	/**
+	 * Says gg when a game ends. It watches for the end-of-game lines that
+	 * minigame servers (Hypixel and similar) send, then waits a moment so it
+	 * doesn't land before the results.
+	 */
+	public static final class AutoGG extends Module {
+		/** Lines that only appear when a game ends. */
+		private static final String[] TRIGGERS = {
+			"1st Killer - ", "1st Place - ", "Winner: ", " - Damage Dealt - ", "Winning Team - ",
+			"Top Survivors", "Winners - ", "Winners: ", "Winner #1", "WINNER!", "VICTORY!", "#1 Killer",
+		};
+		private static final long COOLDOWN_MS = 10_000; // one gg per game
+
+		private final Setting.Text message = add(new Setting.Text("message", "message", "gg", 100));
+		private final Setting.Number delay = add(new Setting.Number("delay", "delay", 1, 0, 5, 0.5, "s"));
+
+		private long lastSent;
+		private int countdown = -1; // ticks until the message is sent
+
+		public AutoGG() {
+			super("auto_gg", "Auto GG", "Says gg when a game ends on minigame servers.", Category.CHAT, false);
+		}
+
+		/** A chat line from the server (ChatHudMixin). */
+		public void onServerMessage(Text message) {
+			if (countdown >= 0 || System.currentTimeMillis() - lastSent < COOLDOWN_MS) {
+				return;
+			}
+			String text = message.asUnformattedString();
+			for (String t : TRIGGERS) {
+				if (text.contains(t)) {
+					countdown = (int) Math.round(delay.get() * 20);
+					return;
+				}
+			}
+		}
+
+		@Override
+		public void tick(MinecraftClient mc) {
+			if (countdown < 0) {
+				return;
+			}
+			if (countdown-- > 0) {
+				return;
+			}
+			String text = message.get().strip();
+			if (!text.isEmpty() && mc.player != null) {
+				mc.player.sendChatMessage(text);
+				lastSent = System.currentTimeMillis();
+			}
+		}
+
+		@Override
+		protected void onDisable() {
+			countdown = -1;
+		}
+	}
 }

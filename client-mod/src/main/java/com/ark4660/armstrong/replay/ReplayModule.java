@@ -32,7 +32,7 @@ public final class ReplayModule extends Module implements Indicator {
 
 	/** Called when you join a world or server. */
 	public void onJoin() {
-		if (isEnabled() && autoRecord.get() && Flashback.installed() && !Flashback.recording() && !Flashback.inReplay()) {
+		if (isActive() && autoRecord.get() && Flashback.installed() && !Flashback.recording() && !Flashback.inReplay()) {
 			Flashback.start();
 		}
 	}

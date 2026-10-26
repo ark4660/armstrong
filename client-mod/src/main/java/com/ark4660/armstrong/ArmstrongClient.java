@@ -22,12 +22,17 @@ import com.ark4660.armstrong.modules.KeystrokesHud;
 import com.ark4660.armstrong.modules.StatusHud;
 import com.ark4660.armstrong.modules.ToggleSprint;
 import com.ark4660.armstrong.modules.Zoom;
+import com.ark4660.armstrong.modules.Freelook;
+import com.ark4660.armstrong.server.ServerPolicy;
+import com.ark4660.armstrong.waypoints.WaypointStore;
+import com.ark4660.armstrong.waypoints.Waypoints;
 import com.ark4660.armstrong.ui.Theme;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientLifecycleEvents;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.minecraft.world.InteractionResult;
@@ -109,6 +114,9 @@ public final class ArmstrongClient implements ClientModInitializer {
 		KeyMapping snaplookKey = key("snaplook", InputConstants.KEY_V);
 		KeyMapping replayKey = key("replay_record", InputConstants.UNKNOWN.getValue());
 		KeyMapping stopwatchKey = key("stopwatch", InputConstants.UNKNOWN.getValue());
+		KeyMapping freelookKey = key("freelook", InputConstants.KEY_LALT);
+		KeyMapping waypointAddKey = key("waypoint_add", InputConstants.KEY_B);
+		KeyMapping waypointsKey = key("waypoints", InputConstants.KEY_N);
 		KeyMapping[] autoTextKeys = {
 			key("auto_text_1", InputConstants.UNKNOWN.getValue()),
 			key("auto_text_2", InputConstants.UNKNOWN.getValue()),
@@ -130,6 +138,9 @@ public final class ArmstrongClient implements ClientModInitializer {
 		modules.register(new ToggleSneak());
 		zoom = modules.register(new Zoom(zoomKey));
 		modules.register(new ViewModules.Snaplook(snaplookKey));
+		modules.register(new Freelook(freelookKey));
+		modules.register(new Waypoints(waypointAddKey, waypointsKey,
+				new WaypointStore(FabricLoader.getInstance().getConfigDir().resolve("armstrong-waypoints.json"))));
 		modules.register(new ViewModules.Fullbright());
 		modules.register(new ViewModules.TimeChanger());
 		modules.register(new ViewModules.WeatherChanger());
@@ -139,13 +150,23 @@ public final class ArmstrongClient implements ClientModInitializer {
 		modules.register(new ViewModules.ChunkBorders());
 		modules.register(new ChatModules.Chat());
 		modules.register(new ChatModules.AutoText(autoTextKeys));
+		ChatModules.AutoGG autoGG = modules.register(new ChatModules.AutoGG());
 		ReplayModule replay = modules.register(new ReplayModule(replayKey));
 		ui = modules.register(new Interface()); // last: it's settings, not a feature
 		Theme.bind(ui);
 		modules.load();
 		Recent.init(FabricLoader.getInstance().getConfigDir().resolve("armstrong-recent.json"));
 		// Remember the world or server for the home screen's continue entries.
+		// Modules the server doesn't allow are off while you're on it.
+		ServerPolicy policy = new ServerPolicy(FabricLoader.getInstance().getConfigDir().resolve("armstrong-servers.json"));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> policy.apply(modules, null));
+		ClientReceiveMessageEvents.GAME.register((message, overlay) -> {
+			if (!overlay && autoGG.isActive()) {
+				autoGG.onServerMessage(message);
+			}
+		});
 		ClientPlayConnectionEvents.JOIN.register((handler, sender, mc) -> {
+			policy.apply(modules, mc.getCurrentServer() == null ? null : mc.getCurrentServer().ip);
 			Recent.joined(mc);
 			replay.onJoin();
 		});
@@ -183,7 +204,7 @@ public final class ArmstrongClient implements ClientModInitializer {
 		*///?}
 		// Hits you make, for combo and reach.
 		AttackEntityCallback.EVENT.register((player, level, hand, entity, hit) -> {
-			if (level.isClientSide() && pvpInfo.isEnabled()) {
+			if (level.isClientSide() && pvpInfo.isActive()) {
 				pvpInfo.onAttack(Minecraft.getInstance(), entity);
 			}
 			return InteractionResult.PASS;

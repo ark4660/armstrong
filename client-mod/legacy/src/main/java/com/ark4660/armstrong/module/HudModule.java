@@ -2,23 +2,31 @@ package com.ark4660.armstrong.module;
 
 import java.util.List;
 
-import com.ark4660.armstrong.compat.Gfx;
 import com.ark4660.armstrong.ui.Term;
 import com.ark4660.armstrong.ui.Theme;
 
 import net.minecraft.client.MinecraftClient;
+import com.ark4660.armstrong.compat.Gfx;
 
 /**
  * A module that draws a terminal-style panel on the HUD. It's placed by an
- * anchor and offset; the drag-and-drop HUD editor will set the same settings.
+ * anchor (the nearest corner) and an offset from it. Panels left where they
+ * are stack in their corner; one dragged in the HUD editor gets a custom
+ * position and stays exactly where it was dropped.
  */
 public abstract class HudModule extends Module {
 	protected static final int PADDING = 4;
+	private static final int MAX_OFFSET = 2000;
 
 	protected final Setting.Choice anchor;
 	protected final Setting.Number offsetX;
 	protected final Setting.Number offsetY;
 	protected final Setting.Bool background;
+	protected final Setting.Number scale;
+	protected final Setting.Bool custom;
+
+	/** Where the panel was last drawn, in GUI pixels (scaled); 0 width if hidden. For the HUD editor. */
+	public int lastX, lastY, lastW, lastH;
 
 	protected HudModule(String id, String name, String description, boolean enabledByDefault, String defaultAnchor) {
 		this(id, name, description, enabledByDefault, defaultAnchor, 6, 6);
@@ -29,9 +37,11 @@ public abstract class HudModule extends Module {
 		super(id, name, description, Category.HUD, enabledByDefault);
 		anchor = add(new Setting.Choice("anchor", "position", defaultAnchor,
 				"Top left", "Top right", "Bottom left", "Bottom right"));
-		offsetX = add(new Setting.Number("offset_x", "offset_x", x, 0, 300, 1, "px"));
-		offsetY = add(new Setting.Number("offset_y", "offset_y", y, 0, 300, 1, "px"));
+		offsetX = add(new Setting.Number("offset_x", "offset_x", x, 0, MAX_OFFSET, 1, "px"));
+		offsetY = add(new Setting.Number("offset_y", "offset_y", y, 0, MAX_OFFSET, 1, "px"));
 		background = add(new Setting.Bool("background", "background", true));
+		scale = add(new Setting.Number("scale", "scale", 100, 50, 200, 5, "%"));
+		custom = add(new Setting.Bool("custom_position", "custom_position", false));
 	}
 
 	/** Size of the content in GUI pixels, without padding; 0 width hides the panel. */
@@ -55,26 +65,87 @@ public abstract class HudModule extends Module {
 	/**
 	 * Draws the panel, pushed away from its corner by `stacked` pixels (the
 	 * height of the panels drawn before it in the same corner). Returns how
-	 * much room it took, so the next panel in that corner goes after it.
+	 * much room it took, so the next panel in that corner goes after it. A
+	 * panel with a custom position ignores stacking and takes no room. In
+	 * the editor, an empty panel shows its name so it can still be moved.
 	 */
-	public final int render(Gfx g, MinecraftClient mc, int stacked) {
+	public final int render(Gfx g, MinecraftClient mc, int stacked, boolean editing) {
 		int cw = width(mc);
+		Term.Line placeholder = null;
 		if (cw <= 0) {
-			return 0;
+			if (!editing) {
+				lastW = 0;
+				return 0;
+			}
+			placeholder = new Term.Line().add("# " + id, Theme.MUTED);
+			cw = placeholder.width();
 		}
-		int pad = ownBoxes() ? 0 : PADDING;
-		int w = cw + 2 * pad;
-		int h = height(mc) + 2 * pad;
+		boolean own = ownBoxes() && placeholder == null;
+		int pad = own ? 0 : PADDING;
+		int iw = cw + 2 * pad;
+		int ih = (placeholder != null ? Term.LINE - 1 : height(mc)) + 2 * pad;
+		float s = scale();
+		int w = Math.round(iw * s);
+		int h = Math.round(ih * s);
+		boolean free = custom.get();
 		int ox = (int) Math.round(offsetX.get());
-		int oy = (int) Math.round(offsetY.get()) + stacked;
+		int oy = (int) Math.round(offsetY.get()) + (free ? 0 : stacked);
 		String a = anchor.get();
 		int x = a.endsWith("right") ? g.guiWidth() - w - ox : ox;
 		int y = a.startsWith("Bottom") ? g.guiHeight() - h - oy : oy;
-		if (background.get() && !ownBoxes()) {
-			Term.panel(g, x, y, w, h, Theme.PANEL, Theme.BORDER);
+		lastX = x;
+		lastY = y;
+		lastW = w;
+		lastH = h;
+
+		g.push();
+		g.translate(x, y);
+		g.scale(s);
+		if ((background.get() || placeholder != null) && !own) {
+			Term.panel(g, 0, 0, iw, ih, Theme.PANEL, Theme.BORDER);
 		}
-		draw(g, mc, x + pad, y + pad);
-		return h + (int) Math.round(offsetY.get()) - 2;
+		if (placeholder != null) {
+			placeholder.draw(g, pad, pad);
+		} else {
+			draw(g, mc, pad, pad);
+		}
+		g.pop();
+		return free ? 0 : h + (int) Math.round(offsetY.get()) - 2;
+	}
+
+	/**
+	 * Puts the panel's top-left corner at x, y (from the HUD editor). The
+	 * nearest corner becomes its anchor, so it keeps its place when the
+	 * window is resized.
+	 */
+	public void place(int x, int y, int guiWidth, int guiHeight) {
+		boolean right = x + lastW / 2 > guiWidth / 2;
+		boolean bottom = y + lastH / 2 > guiHeight / 2;
+		anchor.set((bottom ? "Bottom" : "Top") + " " + (right ? "right" : "left"));
+		offsetX.set((double) Math.max(0, right ? guiWidth - x - lastW : x));
+		offsetY.set((double) Math.max(0, bottom ? guiHeight - y - lastH : y));
+		custom.set(true);
+		lastX = x;
+		lastY = y;
+	}
+
+	/** Back to the default corner, offset and size, stacking with the others. */
+	public void resetPlacement() {
+		anchor.reset();
+		offsetX.reset();
+		offsetY.reset();
+		scale.reset();
+		custom.reset();
+	}
+
+	/** The panel's size factor (1 = 100%). */
+	public float scale() {
+		return (float) (scale.get() / 100.0);
+	}
+
+	/** Grows or shrinks the panel by steps of 10%. */
+	public void rescale(int steps) {
+		scale.set(scale.get() + steps * 10);
 	}
 
 	/** A HUD module made of text lines, the common case. */

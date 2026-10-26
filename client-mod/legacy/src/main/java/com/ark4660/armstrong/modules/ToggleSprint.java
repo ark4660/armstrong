@@ -24,7 +24,7 @@ public final class ToggleSprint extends Module implements Indicator {
 	}
 
 	public boolean isToggled() {
-		return isEnabled() && toggled;
+		return isActive() && toggled;
 	}
 
 	@Override

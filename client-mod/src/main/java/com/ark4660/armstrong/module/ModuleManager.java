@@ -53,7 +53,7 @@ public final class ModuleManager {
 	/** The module of a type if it's registered and switched on, else null. */
 	public <M extends Module> M active(Class<M> type) {
 		M m = get(type);
-		return m != null && m.isEnabled() ? m : null;
+		return m != null && m.isActive() ? m : null;
 	}
 
 	public List<Module> all() {
@@ -62,23 +62,42 @@ public final class ModuleManager {
 
 	public void tick(Minecraft mc) {
 		for (Module m : modules) {
-			if (m.isEnabled()) {
+			if (m.isActive()) {
 				m.tick(mc);
 			}
 		}
 	}
 
+	/** Set while the HUD editor is open: it draws the panels itself, on top. */
+	private boolean editorOpen;
+
+	public void setEditorOpen(boolean open) {
+		editorOpen = open;
+	}
+
 	/** Draws HUD modules, from Fabric's HUD layer (to check in-game: hidden with F1). */
 	public void renderHud(GuiGraphicsExtractor g, Minecraft mc) {
+		if (!editorOpen) {
+			renderHud(g, mc, false);
+		}
+	}
+
+	/** Draws HUD modules; editing shows empty panels too, so they can be moved. */
+	public void renderHud(GuiGraphicsExtractor g, Minecraft mc, boolean editing) {
 		if (com.ark4660.armstrong.replay.Flashback.inReplay()) {
 			return; // a replay shows what was recorded, not live fps and memory
+		}
+		for (Module m : modules) {
+			if (m instanceof HudOverlay o && m.isActive()) {
+				o.drawOverlay(g, mc); // under the panels
+			}
 		}
 		// Panels in the same corner stack, in menu order, so none overlap.
 		java.util.Map<String, Integer> used = new java.util.HashMap<>();
 		for (Module m : modules) {
-			if (m instanceof HudModule hud && hud.isEnabled()) {
+			if (m instanceof HudModule hud && hud.isActive()) {
 				int before = used.getOrDefault(hud.anchor(), 0);
-				used.put(hud.anchor(), before + hud.render(g, mc, before));
+				used.put(hud.anchor(), before + hud.render(g, mc, before, editing));
 			}
 		}
 		renderIndicators(g);
@@ -88,7 +107,7 @@ public final class ModuleManager {
 	private void renderIndicators(GuiGraphicsExtractor g) {
 		List<Term.Line> tags = new ArrayList<>();
 		for (Module m : modules) {
-			if (m instanceof Indicator ind && m.isEnabled() && ind.indicatorLabel() != null) {
+			if (m instanceof Indicator ind && m.isActive() && ind.indicatorLabel() != null) {
 				tags.add(new Term.Line().add("[" + ind.indicatorLabel() + ": ", Theme.TEXT)
 						.add(ind.indicatorValue(), m instanceof com.ark4660.armstrong.modules.Zoom ? Theme.AMBER : Theme.accent())
 						.add("]", Theme.TEXT));

@@ -7,5 +7,8 @@
 	"key.armstrong.auto_text_1": "Auto text 1",
 	"key.armstrong.auto_text_2": "Auto text 2",
 	"key.armstrong.auto_text_3": "Auto text 3",
-	"key.armstrong.replay_record": "Replay: start/stop recording"
+	"key.armstrong.replay_record": "Replay: start/stop recording",
+	"key.armstrong.freelook": "Freelook (hold)",
+	"key.armstrong.waypoint_add": "Add waypoint here",
+	"key.armstrong.waypoints": "Waypoint list"
 }

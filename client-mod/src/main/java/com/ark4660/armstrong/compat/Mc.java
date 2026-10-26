@@ -18,6 +18,32 @@ import net.minecraft.client.gui.screens.Screen;
 public final class Mc {
 	private Mc() {}
 
+	/** The world field of view last used for rendering, after zoom (CameraMixin). */
+	public static volatile float fov = 70f;
+
+	/** Where the camera is: its position and angles (yaw 0 = south, pitch + = down). */
+	public record View(net.minecraft.world.phys.Vec3 pos, float yaw, float pitch) {}
+
+	public static View view() {
+		Minecraft mc = Minecraft.getInstance();
+		//? if >=26 {
+		net.minecraft.client.Camera c = mc.gameRenderer.mainCamera();
+		return new View(c.position(), c.yRot(), c.xRot());
+		//?} else {
+		/*net.minecraft.client.Camera c = mc.gameRenderer.getMainCamera();
+		return new View(c.getPosition(), c.getYRot(), c.getXRot());
+		*///?}
+	}
+
+	/** The dimension's id, like minecraft:the_nether. */
+	public static String dimension(net.minecraft.world.level.Level level) {
+		//? if >=26 {
+		return level.dimension().identifier().toString();
+		//?} else {
+		/*return level.dimension().location().toString();
+		*///?}
+	}
+
 	/** The open screen, or null in-game. */
 	public static Screen screen() {
 		//? if >=26 {
@@ -42,6 +68,15 @@ public final class Mc {
 		return net.minecraft.SharedConstants.getCurrentVersion().name();
 		//?} else {
 		/*return net.minecraft.SharedConstants.getCurrentVersion().getName();
+		*///?}
+	}
+
+	/** Whether an Alt key is held. */
+	public static boolean altDown() {
+		//? if >=26 {
+		return Minecraft.getInstance().hasAltDown();
+		//?} else {
+		/*return Screen.hasAltDown();
 		*///?}
 	}
 

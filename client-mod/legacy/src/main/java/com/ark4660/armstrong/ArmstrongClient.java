@@ -21,6 +21,10 @@ import com.ark4660.armstrong.modules.ToggleSneak;
 import com.ark4660.armstrong.modules.ToggleSprint;
 import com.ark4660.armstrong.modules.ViewModules;
 import com.ark4660.armstrong.modules.Zoom;
+import com.ark4660.armstrong.modules.Freelook;
+import com.ark4660.armstrong.server.ServerPolicy;
+import com.ark4660.armstrong.waypoints.WaypointStore;
+import com.ark4660.armstrong.waypoints.Waypoints;
 import com.ark4660.armstrong.ui.Theme;
 
 import net.fabricmc.api.ClientModInitializer;
@@ -85,6 +89,9 @@ public final class ArmstrongClient implements ClientModInitializer {
 		modules = new ModuleManager(FabricLoader.getInstance().getConfigDir().resolve("armstrong.json"));
 		KeyBinding snaplookKey = key("snaplook", Keyboard.KEY_V);
 		KeyBinding stopwatchKey = key("stopwatch", Keyboard.KEY_NONE);
+		KeyBinding freelookKey = key("freelook", Keyboard.KEY_LMENU);
+		KeyBinding waypointAddKey = key("waypoint_add", Keyboard.KEY_B);
+		KeyBinding waypointsKey = key("waypoints", Keyboard.KEY_N);
 		KeyBinding[] autoTextKeys = {
 			key("auto_text_1", Keyboard.KEY_NONE),
 			key("auto_text_2", Keyboard.KEY_NONE),
@@ -105,6 +112,9 @@ public final class ArmstrongClient implements ClientModInitializer {
 		modules.register(new ToggleSneak());
 		zoom = modules.register(new Zoom(zoomKey));
 		modules.register(new ViewModules.Snaplook(snaplookKey));
+		modules.register(new Freelook(freelookKey));
+		modules.register(new Waypoints(waypointAddKey, waypointsKey,
+				new WaypointStore(FabricLoader.getInstance().getConfigDir().resolve("armstrong-waypoints.json"))));
 		modules.register(new ViewModules.Fullbright());
 		modules.register(new ViewModules.TimeChanger());
 		modules.register(new ViewModules.WeatherChanger());
@@ -113,12 +123,19 @@ public final class ArmstrongClient implements ClientModInitializer {
 		modules.register(new ViewModules.Hitboxes());
 		modules.register(new ChatModules.Chat());
 		modules.register(new ChatModules.AutoText(autoTextKeys));
+		modules.register(new ChatModules.AutoGG());
 		ui = modules.register(new Interface()); // last: it's settings, not a feature
 		Theme.bind(ui);
 		modules.load();
 		Recent.init(FabricLoader.getInstance().getConfigDir().resolve("armstrong-recent.json"));
 		// Remember the world or server for the home screen's continue entries.
-		ClientPlayConnectionEvents.JOIN.register((handler, sender, mc) -> Recent.joined(mc));
+		// Modules the server doesn't allow are off while you're on it.
+		ServerPolicy policy = new ServerPolicy(FabricLoader.getInstance().getConfigDir().resolve("armstrong-servers.json"));
+		ClientPlayConnectionEvents.DISCONNECT.register((handler, mc) -> policy.apply(modules, null));
+		ClientPlayConnectionEvents.JOIN.register((handler, sender, mc) -> {
+			policy.apply(modules, mc.getCurrentServerEntry() == null ? null : mc.getCurrentServerEntry().address);
+			Recent.joined(mc);
+		});
 
 		ClientTickEvents.END_CLIENT_TICK.register(mc -> {
 			while (menuKey.wasPressed()) {
@@ -130,6 +147,7 @@ public final class ArmstrongClient implements ClientModInitializer {
 		});
 		HudRenderCallback.EVENT.register((mc, delta) -> {
 			if (!mc.options.hudHidden) {
+				Mc.partialTick = delta;
 				modules.renderHud(new Gfx(), mc);
 			}
 		});

@@ -119,6 +119,44 @@ public final class Term {
 		*///?}
 	}
 
+	/** Shortens text with … so it's at most maxWidth pixels wide. */
+	public static String fit(String s, int maxWidth) {
+		if (width(s) <= maxWidth) {
+			return s;
+		}
+		while (!s.isEmpty() && width(s + "…") > maxWidth) {
+			s = s.substring(0, s.offsetByCodePoints(s.length(), -1));
+		}
+		return s.stripTrailing() + "…";
+	}
+
+	/**
+	 * Word-wraps text to maxWidth pixels, at most maxLines lines; the last
+	 * line ends with … if there was more.
+	 */
+	public static List<String> wrap(String s, int maxWidth, int maxLines) {
+		List<String> out = new ArrayList<>();
+		String line = "";
+		String[] words = s.split(" ");
+		for (int i = 0; i < words.length; i++) {
+			String next = line.isEmpty() ? words[i] : line + " " + words[i];
+			if (width(next) <= maxWidth || line.isEmpty()) {
+				line = next;
+				continue;
+			}
+			if (out.size() == maxLines - 1) {
+				out.add(fit(String.join(" ", line, String.join(" ", java.util.Arrays.copyOfRange(words, i, words.length))), maxWidth));
+				return out;
+			}
+			out.add(line);
+			line = words[i];
+		}
+		if (!line.isEmpty()) {
+			out.add(fit(line, maxWidth));
+		}
+		return out;
+	}
+
 	/** Pads with spaces to n characters (monospace columns). */
 	public static String pad(String s, int n) {
 		return s.length() >= n ? s : s + " ".repeat(n - s.length());

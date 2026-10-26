@@ -35,6 +35,16 @@ public abstract class CompatScreen extends Screen {
 		return false;
 	}
 
+	/** The mouse moved with a button held; return false to let the game handle it. */
+	protected boolean onDrag(double x, double y, int button, double dx, double dy) {
+		return false;
+	}
+
+	/** A mouse button let go; return false to let the game handle it. */
+	protected boolean onRelease(double x, double y, int button) {
+		return false;
+	}
+
 	/** Draws the background; by default the game's own. */
 	protected void drawBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 		vanillaBackground(g, mouseX, mouseY, delta);
@@ -79,6 +89,16 @@ public abstract class CompatScreen extends Screen {
 	}
 
 	@Override
+	public boolean mouseDragged(MouseButtonEvent event, double dx, double dy) {
+		return onDrag(event.x(), event.y(), event.button(), dx, dy) || super.mouseDragged(event, dx, dy);
+	}
+
+	@Override
+	public boolean mouseReleased(MouseButtonEvent event) {
+		return onRelease(event.x(), event.y(), event.button()) || super.mouseReleased(event);
+	}
+
+	@Override
 	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
 		drawBackground(g, mouseX, mouseY, delta);
 	}
@@ -110,6 +130,16 @@ public abstract class CompatScreen extends Screen {
 	@Override
 	public boolean mouseClicked(double x, double y, int button) {
 		return onClick(x, y, button) || super.mouseClicked(x, y, button);
+	}
+
+	@Override
+	public boolean mouseDragged(double x, double y, int button, double dx, double dy) {
+		return onDrag(x, y, button, dx, dy) || super.mouseDragged(x, y, button, dx, dy);
+	}
+
+	@Override
+	public boolean mouseReleased(double x, double y, int button) {
+		return onRelease(x, y, button) || super.mouseReleased(x, y, button);
 	}
 
 	@Override

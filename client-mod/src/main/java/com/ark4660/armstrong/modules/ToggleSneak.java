@@ -47,7 +47,7 @@ public final class ToggleSneak extends Module implements Indicator {
 
 	@Override
 	public String indicatorLabel() {
-		return isEnabled() && toggled && showTag.get() ? "sneak" : null;
+		return isActive() && toggled && showTag.get() ? "sneak" : null;
 	}
 
 	@Override

@@ -39,7 +39,7 @@ public final class HudTweaks extends Module {
 	}
 
 	private void around(GuiGraphicsExtractor g, Runnable vanilla, Setting.Bool show, Setting.Number scale, Anchor anchor) {
-		if (!isEnabled()) {
+		if (!isActive()) {
 			vanilla.run();
 			return;
 		}
