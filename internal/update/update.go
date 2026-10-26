@@ -171,7 +171,11 @@ func ApplyLauncher(ctx context.Context, dl *download.Client, r *Release) error {
 	if exe, err = filepath.EvalSymlinks(exe); err != nil {
 		return err
 	}
-	return replaceExecutable(exe, data)
+	if err := replaceExecutable(exe, data); err != nil {
+		return err
+	}
+	recordInstalledVersion(filepath.Dir(exe), r.Version)
+	return nil
 }
 
 // replaceExecutable swaps exe for data. Unix renames over the running file

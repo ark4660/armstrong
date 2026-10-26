@@ -56,6 +56,15 @@ jobs:
           ARMSTRONG_SIGNING_KEY: ${{ secrets.ARMSTRONG_SIGNING_KEY }}
         run: go run ./cmd/armstrong release index -version "$VERSION" -dist dist
 
+      # After release.json, so the update index doesn't list it: the
+      # launcher updates itself in place, the installer is for first installs.
+      - name: Build Windows installer
+        run: |
+          sudo apt-get install -y -qq nsis
+          makensis -V2 -DVERSION="$VERSION" -DVIVERSION="${VERSION%%-*}.0" \
+            -DDIST="$GITHUB_WORKSPACE/dist" -DOUT="$GITHUB_WORKSPACE/dist/ArmstrongSetup.exe" \
+            packaging/windows/armstrong.nsi
+
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}

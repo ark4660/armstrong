@@ -17,14 +17,15 @@ A terminal launcher and a performance-focused Minecraft client for Fabric.
 curl -fsSL https://raw.githubusercontent.com/ark4660/armstrong/main/scripts/install.sh | sh
 ```
 
-**Windows** (in PowerShell):
+**Windows**: download and run
+[ArmstrongSetup.exe](https://github.com/ark4660/armstrong/releases/latest/download/ArmstrongSetup.exe).
+It's unsigned for now, so Windows may show "Windows protected your PC": click
+**More info**, then **Run anyway**. Uninstall from Settings → Apps → Installed
+apps. (Or, from PowerShell:
+`irm https://raw.githubusercontent.com/ark4660/armstrong/main/scripts/install.ps1 | iex`.)
 
-```powershell
-irm https://raw.githubusercontent.com/ark4660/armstrong/main/scripts/install.ps1 | iex
-```
-
-Then open a new terminal and run `armstrong`, or start it from your
-applications menu (Linux) or Start Menu (Windows). No admin rights are needed:
+Then start Armstrong from your applications menu (Linux) or Start Menu
+(Windows), or open a new terminal and run `armstrong`. No admin rights are needed:
 it installs to `~/.local/bin` or `%LOCALAPPDATA%\Programs\Armstrong`, where it
 can keep itself up to date. When a new release is out it shows
 `update available` (press `U` on Home); the client updates on its own before

@@ -21,3 +21,10 @@ jobs:
       - name: Build client mod
         working-directory: client-mod
         run: ./gradlew build --no-daemon
+      - name: Build Windows installer
+        run: |
+          sudo apt-get install -y -qq nsis
+          for a in amd64 arm64; do
+            CGO_ENABLED=0 GOOS=windows GOARCH=$a go build -o "dist/armstrong-windows-$a.exe" ./cmd/armstrong
+          done
+          makensis -V2 -DVERSION=0.0.0 -DDIST="$GITHUB_WORKSPACE/dist" -DOUT="$GITHUB_WORKSPACE/dist/ArmstrongSetup.exe" packaging/windows/armstrong.nsi
