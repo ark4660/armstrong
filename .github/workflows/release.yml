@@ -2,6 +2,11 @@
 #   git tag v0.2.0 && git push origin v0.2.0
 # Launchers check the release's signed release.json and update themselves
 # and the client from it.
+#
+# A tag with a pre-release part (v0.3.0-beta.1) publishes a beta: a GitHub
+# pre-release, which releases/latest skips, so launchers and the install
+# scripts never pick it up on their own. Testers opt in with
+# ARMSTRONG_UPDATE_URL=https://github.com/ark4660/armstrong/releases/download/v0.3.0-beta.1/ armstrong update -force
 name: release
 
 on:
@@ -68,4 +73,7 @@ jobs:
       - name: Publish
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "$GITHUB_REF_NAME" dist/* --title "Armstrong $VERSION" --generate-notes
+        run: |
+          flags=()
+          case "$VERSION" in *-*) flags=(--prerelease --latest=false) ;; esac
+          gh release create "$GITHUB_REF_NAME" dist/* --title "Armstrong $VERSION" --generate-notes "${flags[@]}"

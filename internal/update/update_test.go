@@ -111,7 +111,7 @@ func TestWrongKeyRejected(t *testing.T) {
 }
 
 func TestCompareVersions(t *testing.T) {
-	ordered := []string{"0.1.0-dev", "0.1.0", "0.1.1", "0.2.0", "1.0.0", "1.10.0"}
+	ordered := []string{"0.1.0-dev", "0.1.0", "0.1.1", "0.2.0", "0.2.6", "0.3.0-beta.1", "0.3.0-beta.2", "0.3.0", "1.0.0", "1.10.0"}
 	for i := 1; i < len(ordered); i++ {
 		if compareVersions(ordered[i-1], ordered[i]) >= 0 || compareVersions(ordered[i], ordered[i-1]) <= 0 {
 			t.Errorf("%s should be < %s", ordered[i-1], ordered[i])
