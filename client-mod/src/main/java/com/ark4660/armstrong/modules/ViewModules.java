@@ -71,6 +71,21 @@ public final class ViewModules {
 	}
 
 	/** Moves the burning overlay down so it covers less of the screen. */
+	/** Hides the names above players' heads, and optionally named mobs' and armor stands'. */
+	public static final class HideNameTags extends Module {
+		private final Setting.Bool players = add(new Setting.Bool("players", "players", true));
+		private final Setting.Bool mobs = add(new Setting.Bool("mobs", "mobs", false));
+
+		public HideNameTags() {
+			super("hide_name_tags", "Hide Name Tags", "Hide the names above other players (and named mobs, if you like).", Category.VIEW, false);
+		}
+
+		/** Whether to hide the name tag of a player (true) or of anything else. */
+		public boolean hides(boolean player) {
+			return player ? players.get() : mobs.get();
+		}
+	}
+
 	public static final class LowFire extends Module {
 		private final Setting.Number lower = add(new Setting.Number("lower", "lower_by", 30, 0, 50, 5, "%"));
 

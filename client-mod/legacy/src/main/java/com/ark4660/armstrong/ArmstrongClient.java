@@ -123,6 +123,7 @@ public final class ArmstrongClient implements ClientModInitializer {
 		modules.register(new ViewModules.TimeChanger());
 		modules.register(new ViewModules.WeatherChanger());
 		modules.register(new ViewModules.LowFire());
+		modules.register(new ViewModules.HideNameTags());
 		modules.register(new ViewModules.Particles());
 		modules.register(new ViewModules.Hitboxes());
 		modules.register(new ChatModules.Chat());

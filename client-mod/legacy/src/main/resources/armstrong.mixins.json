@@ -3,6 +3,7 @@
 	"package": "com.ark4660.armstrong.mixin",
 	"compatibilityLevel": "JAVA_${java}",
 	"client": [
+		"NameTagMixin",
 		"ChatHudMixin",
 		"EntityTurnMixin",
 		"GameRendererMixin",
