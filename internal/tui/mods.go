@@ -58,8 +58,26 @@ type (
 	}
 	modsCategoriesMsg struct{ categories []string }
 	modsPlanMsg       struct {
+		seq   int
 		title string
 		plan  *mods.Plan
+		err   error
+	}
+	modsProgressMsg struct {
+		seq  int
+		text string
+	}
+	modsVersionsMsg struct {
+		project  string
+		versions []mods.Version
+		err      error
+	}
+	// modsVersionCheckMsg is one checked version, or (done) the end of a check.
+	modsVersionCheckMsg struct {
+		seq   int
+		id    string
+		check versionCheck
+		done  bool
 		err   error
 	}
 	modsRemovalMsg struct {
@@ -116,12 +134,36 @@ type modsState struct {
 	details    map[string]*modrinth.ProjectDetails
 	showDetail bool // narrow terminals: details replace the list
 
+	versions *versionsState // a project's version list, over Browse
+
 	plan      *mods.Plan
 	planTitle string
 	removal   *mods.Removal
 	working   string
+	progress  string             // what the running check is looking at
+	cancel    context.CancelFunc // stops the running check; nil while a change is written
+	checkSeq  int                // results of older or cancelled checks are dropped
 	notice    string
 }
+
+// versionsState is every version of one project for the instance (v on a
+// search result), and what checking them found.
+type versionsState struct {
+	project, title string
+	loading        bool
+	list           []mods.Version
+	checks         map[string]versionCheck // by version id
+	picker         picker
+}
+
+type versionCheck struct {
+	fits bool
+	text string // why it doesn't fit, or what it would add
+}
+
+// checkBatch is how many versions C checks at once: each check downloads the
+// version's jar, so "all of them" could mean gigabytes for a long-lived mod.
+const checkBatch = 10
 
 func newModsState() modsState {
 	ti := textinput.New()
@@ -148,7 +190,11 @@ func (m *model) openMods() tea.Cmd {
 		return nil
 	}
 	saved := m.mods
+	if saved.cancel != nil {
+		saved.cancel()
+	}
 	m.mods = newModsState()
+	m.mods.checkSeq = saved.checkSeq
 	m.mods.search.SetValue(saved.search.Value())
 	m.mods.categories, m.mods.view, m.mods.notice = saved.categories, saved.view, saved.notice
 	m.mods.instID, m.mods.opening = inst.ID, true
@@ -186,6 +232,10 @@ func (m *model) resizeMods() {
 	m.mods.blist.height = max(h-2, 3)
 	m.mods.list.clamp()
 	m.mods.blist.clamp()
+	if v := m.mods.versions; v != nil {
+		v.picker.height = m.mods.blist.height
+		v.picker.clamp()
+	}
 	m.mods.search.SetWidth(max(min(m.width/2, 50), 20))
 }
 
@@ -345,8 +395,45 @@ func (m model) handleModsMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, m.loadDetail()
 	case modsDetailMsg:
 		s.details[msg.project] = msg.details
+	case modsVersionsMsg:
+		v := s.versions
+		if v == nil || v.project != msg.project {
+			return m, nil
+		}
+		v.loading = false
+		if msg.err != nil {
+			s.versions, s.notice = nil, "Couldn't list versions: "+msg.err.Error()
+			return m, nil
+		}
+		v.list = msg.versions
+		names := make([]string, len(v.list))
+		for i, x := range v.list {
+			names[i] = x.Number
+		}
+		v.picker.setItems(names)
+	case modsVersionCheckMsg:
+		if msg.seq != s.checkSeq {
+			return m, nil
+		}
+		if !msg.done {
+			if s.versions != nil {
+				s.versions.checks[msg.id] = msg.check
+			}
+			return m, nil
+		}
+		s.working, s.progress, s.cancel = "", "", nil
+		if msg.err != nil && !errors.Is(msg.err, context.Canceled) {
+			s.notice = "Couldn't check: " + msg.err.Error()
+		}
+	case modsProgressMsg:
+		if msg.seq == s.checkSeq && s.working != "" {
+			s.progress = msg.text
+		}
 	case modsPlanMsg:
-		s.working = ""
+		if msg.seq != s.checkSeq {
+			return m, nil // cancelled, or from an instance that's no longer open
+		}
+		s.working, s.progress, s.cancel = "", "", nil
 		if msg.err != nil {
 			s.notice = installError(msg.title, msg.err)
 			return m, nil
@@ -380,6 +467,7 @@ func (m model) handleModsMsg(msg tea.Msg) (tea.Model, tea.Cmd) {
 			s.notice = msg.err.Error()
 		} else {
 			s.notice = msg.text
+			s.versions = nil // back to the search after installing a chosen version
 		}
 		return m, m.rescanMods()
 	}
@@ -390,10 +478,16 @@ func installError(title string, err error) string {
 	var inClient *mods.ErrInClient
 	var noFit *mods.ErrNoFit
 	switch {
+	case errors.Is(err, context.DeadlineExceeded):
+		return fmt.Sprintf("Checking %s took too long. Modrinth may be slow right now: try again in a moment.", title)
 	case errors.As(err, &inClient):
 		return err.Error() + "."
 	case errors.As(err, &noFit) && noFit.Tried > 0 && len(noFit.Problems) > 0:
-		return fmt.Sprintf("Can't install %s: %s", title, noFit.Problems[0].Text)
+		msg := fmt.Sprintf("Can't install %s: %s", title, noFit.Problems[0].Text)
+		if noFit.Untried > 0 {
+			msg += fmt.Sprintf(". %d older version(s) weren't tried: press v to check them.", noFit.Untried)
+		}
+		return msg
 	case errors.As(err, &noFit):
 		return fmt.Sprintf("%s has no version for this Minecraft version on Fabric.", title)
 	}
@@ -417,7 +511,21 @@ func (m model) handleModsKey(msg tea.KeyPressMsg) (tea.Model, tea.Cmd) {
 	if s.mgr == nil {
 		return m, nil
 	}
+	// One thing at a time: while a check runs only Esc (cancel) works, and
+	// nothing does while a change is being written.
+	if s.working != "" {
+		if k == "esc" && s.cancel != nil {
+			s.cancel()
+			s.checkSeq++
+			s.working, s.progress, s.cancel = "", "", nil
+			s.notice = "Cancelled."
+		}
+		return m, nil
+	}
 
+	if s.versions != nil {
+		return m.handleVersionsKey(k)
+	}
 	if s.view == modsBrowse && s.search.Focused() {
 		switch k {
 		case "enter", "down":
@@ -503,14 +611,10 @@ func (m model) handleInstalledKey(k string) (tea.Model, tea.Cmd) {
 				s.notice = "No update known for " + row.installed.Name() + " (press U to check)."
 				return m, nil
 			}
-			s.working = "Checking " + u.Version.Number
 			mgr, title := s.mgr, row.installed.Name()
-			return m, tea.Batch(func() tea.Msg {
-				ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-				defer cancel()
-				plan, err := mgr.PlanUpdate(ctx, u.Installed, u.Version.ID)
-				return modsPlanMsg{title: title, plan: plan, err: err}
-			}, m.spin.Tick)
+			return m.startCheck("Checking "+title+" "+u.Version.Number, title, 2*time.Minute, func(ctx context.Context, progress func(string)) (*mods.Plan, error) {
+				return mgr.PlanUpdate(ctx, u.Installed, u.Version.ID, progress)
+			})
 		}
 	default:
 		m.mods.list.handleKey(k)
@@ -569,6 +673,20 @@ func (m model) handleBrowseKey(k string) (tea.Model, tea.Cmd) {
 			s.showDetail = !s.showDetail
 		}
 		return m, m.loadDetail()
+	case "v":
+		hit := m.cursorHit()
+		if hit == nil {
+			return m, nil
+		}
+		s.versions = &versionsState{project: hit.ProjectID, title: hit.Title, loading: true,
+			checks: map[string]versionCheck{}, picker: picker{height: s.blist.height}}
+		mgr, project := s.mgr, hit.ProjectID
+		return m, tea.Batch(func() tea.Msg {
+			ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+			defer cancel()
+			vs, err := mgr.Versions(ctx, project)
+			return modsVersionsMsg{project: project, versions: vs, err: err}
+		}, m.spin.Tick)
 	case "i":
 		hit := m.cursorHit()
 		if hit == nil {
@@ -578,14 +696,10 @@ func (m model) handleBrowseKey(k string) (tea.Model, tea.Cmd) {
 			s.notice = "Stop the game before changing this instance's mods."
 			return m, nil
 		}
-		s.working, s.notice = "Checking "+hit.Title, ""
 		mgr, project, title := s.mgr, hit.ProjectID, hit.Title
-		return m, tea.Batch(func() tea.Msg {
-			ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
-			defer cancel()
-			plan, err := mgr.PlanInstall(ctx, project)
-			return modsPlanMsg{title: title, plan: plan, err: err}
-		}, m.spin.Tick)
+		return m.startCheck("Checking "+title, title, 3*time.Minute, func(ctx context.Context, progress func(string)) (*mods.Plan, error) {
+			return mgr.PlanInstall(ctx, project, progress)
+		})
 	}
 	before := s.blist.cursor
 	s.blist.handleKey(k)
@@ -600,6 +714,148 @@ func (m model) handleBrowseKey(k string) (tea.Model, tea.Cmd) {
 	return m, tea.Batch(cmds...)
 }
 
+// startCheck works out an install or update plan in the background. Esc
+// cancels it; progress and results of a cancelled check are dropped.
+func (m model) startCheck(label, title string, timeout time.Duration, run func(ctx context.Context, progress func(string)) (*mods.Plan, error)) (tea.Model, tea.Cmd) {
+	s := &m.mods
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	s.checkSeq++
+	s.working, s.progress, s.notice, s.cancel = label, "", "", cancel
+	seq, send := s.checkSeq, m.send.fn
+	return m, tea.Batch(func() tea.Msg {
+		defer cancel()
+		plan, err := run(ctx, func(text string) { send(modsProgressMsg{seq: seq, text: text}) })
+		return modsPlanMsg{seq: seq, title: title, plan: plan, err: err}
+	}, m.spin.Tick)
+}
+
+// handleVersionsKey drives a project's version list: install a chosen
+// version, or check whether versions would fit without installing them.
+func (m model) handleVersionsKey(k string) (tea.Model, tea.Cmd) {
+	s := &m.mods
+	v := s.versions
+	s.notice = ""
+	if k == "esc" {
+		s.versions = nil
+		return m, nil
+	}
+	i := v.picker.selected()
+	if v.loading || i < 0 {
+		v.picker.handleKey(k)
+		return m, nil
+	}
+	chosen := v.list[i]
+	switch k {
+	case "enter", "i":
+		if m.modsLocked() {
+			s.notice = "Stop the game before changing this instance's mods."
+			return m, nil
+		}
+		mgr, project, title := s.mgr, v.project, v.title+" "+chosen.Number
+		return m.startCheck("Checking "+title, title, 3*time.Minute, func(ctx context.Context, progress func(string)) (*mods.Plan, error) {
+			return mgr.PlanInstallVersion(ctx, project, chosen.ID, progress)
+		})
+	case "c":
+		return m.checkVersions([]mods.Version{chosen})
+	case "C":
+		return m.checkVersions(v.list[i:min(i+checkBatch, len(v.list))])
+	}
+	v.picker.handleKey(k)
+	return m, nil
+}
+
+// checkVersions works out in the background whether each version would
+// install, filling in the list as answers come. Esc stops it; what's
+// checked by then stays.
+func (m model) checkVersions(vs []mods.Version) (tea.Model, tea.Cmd) {
+	s := &m.mods
+	v := s.versions
+	ids := make([]string, len(vs))
+	for i, x := range vs {
+		ids[i] = x.ID
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+	s.checkSeq++
+	s.working, s.progress, s.notice, s.cancel = "Checking "+v.title+" "+vs[0].Number, "", "", cancel
+	if len(vs) > 1 {
+		s.working = fmt.Sprintf("Checking %d versions of %s", len(vs), v.title)
+		s.progress = fmt.Sprintf("1 of %d", len(vs))
+	}
+	seq, send, mgr, project := s.checkSeq, m.send.fn, s.mgr, v.project
+	return m, tea.Batch(func() tea.Msg {
+		defer cancel()
+		done := 0
+		err := mgr.CheckVersions(ctx, project, ids, func(id string, plan *mods.Plan, err error) {
+			done++
+			send(modsVersionCheckMsg{seq: seq, id: id, check: describeCheck(plan, err)})
+			if done < len(ids) {
+				send(modsProgressMsg{seq: seq, text: fmt.Sprintf("%d of %d", done+1, len(ids))})
+			}
+		})
+		return modsVersionCheckMsg{seq: seq, done: true, err: err}
+	}, m.spin.Tick)
+}
+
+// describeCheck sums up one version's check for its row in the list.
+func describeCheck(plan *mods.Plan, err error) versionCheck {
+	var noFit *mods.ErrNoFit
+	switch {
+	case err == nil:
+		text := "fits"
+		if n := len(plan.Steps) - 1; n > 0 {
+			text += fmt.Sprintf(", adds %d dependenc%s", n, map[bool]string{true: "y", false: "ies"}[n == 1])
+		}
+		if len(plan.Warnings) > 0 {
+			text += " (" + plan.Warnings[0].Text + ")"
+		}
+		return versionCheck{fits: true, text: text}
+	case errors.As(err, &noFit) && len(noFit.Problems) > 0:
+		return versionCheck{text: noFit.Problems[0].Text}
+	}
+	return versionCheck{text: err.Error()}
+}
+
+func (m model) versionsView() string {
+	st := m.styles
+	v := m.mods.versions
+	inst := m.selected()
+	head := "  " + st.title.Render("Versions of "+v.title)
+	if inst != nil {
+		head += st.muted.Render("  for Minecraft " + inst.Minecraft + " · Fabric")
+	}
+	if v.loading {
+		return lipgloss.JoinVertical(lipgloss.Left, head, "", "  "+m.spin.View()+" Loading versions…")
+	}
+	if len(v.list) == 0 {
+		return lipgloss.JoinVertical(lipgloss.Left, head, "", "  "+st.muted.Render("No versions for this Minecraft version and loader."))
+	}
+	head += st.muted.Render(fmt.Sprintf("  (%d, newest first)", len(v.list)))
+	w := max(m.width-4, 20)
+	rows := v.picker.view(func(i int, cursor bool) string {
+		x := v.list[i]
+		pointer, number := "  ", x.Number
+		if cursor {
+			pointer, number = st.key.Render("› "), st.value.Bold(true).Render(x.Number)
+		}
+		date := x.Published
+		if len(date) > 10 {
+			date = date[:10]
+		}
+		info := st.muted.Render(fmt.Sprintf("  %-7s %s  %5.1f MB  ", x.Channel, date, float64(x.File.Size)/(1<<20)))
+		status := st.muted.Render("not checked")
+		if c, ok := v.checks[x.ID]; ok {
+			if c.fits {
+				status = st.ok.Render("✓ " + c.text)
+			} else {
+				status = st.err.Render("✗ " + c.text)
+			}
+		}
+		return lipgloss.NewStyle().MaxWidth(w).Render(pointer + number + info + status)
+	})
+	hint := st.muted.Render(fmt.Sprintf("i on the search list installs the newest version that fits. Checking downloads each version's jar, so C checks %d at a time.", checkBatch))
+	return lipgloss.JoinVertical(lipgloss.Left, head, "", strings.Join(rows, "\n"), "", "  "+lipgloss.NewStyle().Width(max(m.width-6, 20)).Render(hint))
+}
+
 func (m model) commitModsChange() (tea.Model, tea.Cmd) {
 	s := &m.mods
 	mgr := s.mgr
@@ -607,7 +863,9 @@ func (m model) commitModsChange() (tea.Model, tea.Cmd) {
 		title := s.planTitle
 		s.plan, s.working = nil, "Installing "+title
 		return m, tea.Batch(func() tea.Msg {
-			err := mgr.Commit(plan)
+			ctx, cancel := context.WithTimeout(context.Background(), 10*time.Minute)
+			defer cancel()
+			err := mgr.Commit(ctx, plan)
 			text := fmt.Sprintf("Installed %s", title)
 			if n := len(plan.Steps) - 1; n > 0 {
 				text += fmt.Sprintf(" and %d dependenc%s", n, map[bool]string{true: "y", false: "ies"}[n == 1])
@@ -628,14 +886,20 @@ func (m model) commitModsChange() (tea.Model, tea.Cmd) {
 func (m model) modsKeys() []keyHelp {
 	s := &m.mods
 	switch {
+	case s.working != "" && s.cancel != nil:
+		return []keyHelp{{"esc", "cancel"}}
+	case s.working != "":
+		return nil
 	case s.plan != nil:
 		return []keyHelp{{"y", "install"}, {"n", "cancel"}}
+	case s.versions != nil && s.removal == nil:
+		return []keyHelp{{"enter", "install this version"}, {"c", "check it"}, {"C", fmt.Sprintf("check %d", checkBatch)}, {"esc", "back"}}
 	case s.removal != nil:
 		return []keyHelp{{"y", "remove"}, {"n", "cancel"}}
 	case s.view == modsBrowse && s.search.Focused():
 		return []keyHelp{{"enter", "search"}, {"esc", "done"}}
 	case s.view == modsBrowse:
-		return []keyHelp{{"/", "search"}, {"i", "install"}, {"enter", "details"}, {"s", "sort"}, {"c", "category"}, {"esc", "installed"}}
+		return []keyHelp{{"/", "search"}, {"i", "install"}, {"v", "versions"}, {"enter", "details"}, {"s", "sort"}, {"c", "category"}, {"esc", "installed"}}
 	}
 	return []keyHelp{{"space", "on/off"}, {"d", "remove"}, {"U", "check updates"}, {"u", "update"}, {"b", "browse"}}
 }
@@ -671,6 +935,8 @@ func (m model) modsView() string {
 		body = m.planView()
 	case s.removal != nil:
 		body = m.removalView()
+	case s.versions != nil:
+		body = m.versionsView()
 	case s.view == modsBrowse:
 		body = m.browseView()
 	default:
@@ -682,7 +948,11 @@ func (m model) modsView() string {
 		if w == "" {
 			w = "Checking for updates"
 		}
-		lines = append(lines, "", "  "+m.spin.View()+" "+w+"…")
+		line := "  " + m.spin.View() + " " + w + "…"
+		if s.progress != "" {
+			line += st.muted.Render("  " + s.progress)
+		}
+		lines = append(lines, "", line)
 	}
 	if s.notice != "" {
 		lines = append(lines, "", "  "+st.warn.Width(max(m.width-4, 20)).Render(s.notice))
@@ -830,7 +1100,7 @@ func (m model) detailView(width int) string {
 		}
 		lines = append(lines, "", st.muted.Render(strings.Join(wrapped, "\n")))
 	}
-	lines = append(lines, "", st.key.Render("i")+st.muted.Render(" install · modrinth.com/mod/"+h.Slug))
+	lines = append(lines, "", st.key.Render("i")+st.muted.Render(" install the newest that fits · ")+st.key.Render("v")+st.muted.Render(" pick a version · modrinth.com/mod/"+h.Slug))
 	return strings.Join(lines, "\n")
 }
 

@@ -324,7 +324,8 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleLoginMsg(msg)
 
 	case modsOpenedMsg, modsScannedMsg, modsSearchMsg, modsDetailMsg, modsCategoriesMsg,
-		modsPlanMsg, modsRemovalMsg, modsUpdatesMsg, modsDoneMsg:
+		modsPlanMsg, modsProgressMsg, modsRemovalMsg, modsUpdatesMsg, modsDoneMsg,
+		modsVersionsMsg, modsVersionCheckMsg:
 		return m.handleModsMsg(msg)
 
 	case stepMsg:
@@ -393,7 +394,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case spinner.TickMsg:
 		ms := &m.mods
-		modsBusy := ms.opening || ms.searching || ms.checking || ms.working != "" || m.updating
+		modsBusy := ms.opening || ms.searching || ms.checking || ms.working != "" || m.updating || (ms.versions != nil && ms.versions.loading)
 		if m.state == stateIdle && m.working == "" && !m.login.active && !modsBusy {
 			return m, nil
 		}

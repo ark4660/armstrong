@@ -14,6 +14,8 @@ type Source interface {
 	// Versions of a project for a Minecraft version and loader, any order.
 	Versions(ctx context.Context, project, minecraft, loader string) ([]Version, error)
 	Version(ctx context.Context, id string) (*Version, error)
+	// Title is a project's display name.
+	Title(ctx context.Context, project string) (string, error)
 	// Identify maps sha1s of local files to the versions they are.
 	Identify(ctx context.Context, sha1s []string) (map[string]Version, error)
 	// Latest maps sha1s to the newest version of the same project.
@@ -91,6 +93,14 @@ func (s Modrinth) Version(ctx context.Context, id string) (*Version, error) {
 		return nil, errNoFile(v.VersionNumber)
 	}
 	return &c, nil
+}
+
+func (s Modrinth) Title(ctx context.Context, project string) (string, error) {
+	p, err := s.Client.Project(ctx, project)
+	if err != nil {
+		return "", err
+	}
+	return p.Title, nil
 }
 
 func (s Modrinth) Identify(ctx context.Context, sha1s []string) (map[string]Version, error) {

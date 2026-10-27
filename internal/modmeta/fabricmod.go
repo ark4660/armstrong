@@ -114,11 +114,19 @@ func read(r io.ReaderAt, size int64, depth int) (*FabricMod, error) {
 		if f == nil || f.UncompressedSize64 > maxNested {
 			continue // a broken reference shouldn't hide the outer mod
 		}
-		data, err := readAll(f)
-		if err != nil {
-			continue
+		// Nested jars are usually stored uncompressed: read them in place, so
+		// a remote jar (download.RangeReader) only fetches their index too.
+		var inner io.ReaderAt
+		if off, err := f.DataOffset(); err == nil && f.Method == zip.Store {
+			inner = io.NewSectionReader(r, off, int64(f.UncompressedSize64))
+		} else {
+			data, err := readAll(f)
+			if err != nil {
+				continue
+			}
+			inner = bytes.NewReader(data)
 		}
-		if nested, err := read(bytes.NewReader(data), int64(len(data)), depth+1); err == nil {
+		if nested, err := read(inner, int64(f.UncompressedSize64), depth+1); err == nil {
 			mod.Nested = append(mod.Nested, nested)
 		}
 	}

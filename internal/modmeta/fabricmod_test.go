@@ -89,3 +89,25 @@ func TestRealJars(t *testing.T) {
 		t.Logf("%-40s %s %s (%d nested)", filepath.Base(j), mod.ID, mod.Version, len(mod.Nested))
 	}
 }
+
+// A nested jar stored uncompressed (the usual jar-in-jar layout) is read in
+// place from the outer jar.
+func TestReadStoredNestedJar(t *testing.T) {
+	inner := makeJar(t, map[string][]byte{
+		"fabric.mod.json": []byte(`{"id":"inner","version":"2.0"}`),
+	})
+	var buf bytes.Buffer
+	zw := zip.NewWriter(&buf)
+	w, _ := zw.Create("fabric.mod.json")
+	w.Write([]byte(`{"id":"outer","version":"1.0","jars":[{"file":"META-INF/jars/inner.jar"}]}`))
+	w, _ = zw.CreateHeader(&zip.FileHeader{Name: "META-INF/jars/inner.jar", Method: zip.Store})
+	w.Write(inner)
+	zw.Close()
+	mod, err := Read(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(mod.Nested) != 1 || mod.Nested[0].ID != "inner" {
+		t.Fatalf("nested = %+v", mod.Nested)
+	}
+}

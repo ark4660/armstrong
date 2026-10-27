@@ -681,7 +681,7 @@ func cmdMods(ctx context.Context, paths app.Paths, args []string) error {
 		if err != nil {
 			return err
 		}
-		plan, err := mgr.PlanInstall(ctx, p.ID)
+		plan, err := mgr.PlanInstall(ctx, p.ID, nil)
 		if err != nil {
 			return err
 		}
@@ -702,7 +702,7 @@ func cmdMods(ctx context.Context, paths app.Paths, args []string) error {
 		if !confirm("Go ahead?") {
 			return nil
 		}
-		if err := mgr.Commit(plan); err != nil {
+		if err := mgr.Commit(ctx, plan); err != nil {
 			return err
 		}
 		fmt.Println("Done.")

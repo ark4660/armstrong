@@ -40,6 +40,10 @@ type Manager struct {
 	DL                      *download.Client
 
 	mu sync.Mutex // guards the index file
+
+	baseOnce sync.Once // the client layer's units, read once
+	base     *Env
+	baseErr  error
 }
 
 // Installed is a jar in the mods folder.
@@ -199,19 +203,33 @@ func fileSHA1(path string) (string, error) {
 	return hex.EncodeToString(h.Sum(nil)), nil
 }
 
-// BaseEnv is the game plus the client layer.
+// BaseEnv is the game plus the client layer, and the add-ons the player
+// could switch on. The layer's jars are read once per Manager (Fabric API
+// alone nests dozens of mods); callers get their own copy.
 func (m *Manager) BaseEnv() (*Env, error) {
-	env := NewEnv(m.Minecraft, m.Loader, m.Java)
-	if m.Layer != nil {
-		for i, mod := range m.Layer.Mods {
-			meta, err := modmeta.ReadJar(m.Layer.Files[i])
-			if err != nil {
-				return nil, fmt.Errorf("client mod %s: %w", mod.Name, err)
+	m.baseOnce.Do(func() {
+		env := NewEnv(m.Minecraft, m.Loader, m.Java)
+		if m.Layer != nil {
+			for i, mod := range m.Layer.Mods {
+				meta, err := modmeta.ReadJar(m.Layer.Files[i])
+				if err != nil {
+					m.baseErr = fmt.Errorf("client mod %s: %w", mod.Name, err)
+					return
+				}
+				env.Add(UnitsOf(meta), FromClient, mod.Name, "client:"+mod.ID)
 			}
-			env.Add(UnitsOf(meta), FromClient, mod.Name, "client:"+mod.ID)
+			for _, mod := range m.Layer.Manifest.Mods {
+				if mod.Optional && !m.Layer.Has(mod.ID) {
+					env.AddAddon(mod)
+				}
+			}
 		}
+		m.base = env
+	})
+	if m.baseErr != nil {
+		return nil, m.baseErr
 	}
-	return env, nil
+	return m.base.Clone(), nil
 }
 
 // envWith is the base plus every enabled installed mod except skip (a key).
@@ -292,11 +310,15 @@ func (m *Manager) SetEnabled(i *Installed, on bool) error {
 // ErrInClient means the project is already part of the client layer.
 type ErrInClient struct {
 	Name  string
-	Addon bool // an optional add-on the player can switch on instead
+	Addon bool   // an optional add-on the player can switch on instead
+	Mod   string // set when Name is built into this client mod (Sodium provides Indium)
 }
 
 func (e *ErrInClient) Error() string {
-	if e.Addon {
+	switch {
+	case e.Mod != "":
+		return e.Name + " is built into " + e.Mod + ", which is part of the Armstrong client"
+	case e.Addon:
 		return e.Name + " is an Armstrong add-on: switch it on under Client add-ons instead"
 	}
 	return e.Name + " is already part of the Armstrong client"
@@ -311,6 +333,7 @@ func (e *ErrInstalled) Error() string { return e.Name + " is already installed (
 type ErrNoFit struct {
 	Project  string
 	Tried    int
+	Untried  int       // older versions left out of the automatic choice
 	Problems []Problem // why the newest candidate didn't fit
 }
 
@@ -357,11 +380,88 @@ type planner struct {
 	base      *Env // game + client + installed (minus what's being replaced)
 	plan      *Plan
 	replace   map[string]string // project id → installed key being replaced
+	progress  func(string)      // may be nil
+
+	seen *lookups
+}
+
+// lookups are answers that hold for every plan against the same mods folder:
+// what the site says, and dependencies that didn't fit. Without them every
+// candidate of a mod resolves its dependencies again from scratch; checking
+// several versions of a mod in a row shares them too.
+type lookups struct {
+	versions map[string][]Version
+	version  map[string]*Version
+	failed   map[string]error // by failKey
+}
+
+func newLookups() *lookups {
+	return &lookups{versions: map[string][]Version{}, version: map[string]*Version{}, failed: map[string]error{}}
 }
 
 // PlanInstall works out how to install a project: a version that fits, and
 // its required dependencies, recursively. Nothing is written until Commit.
-func (m *Manager) PlanInstall(ctx context.Context, project string) (*Plan, error) {
+// progress, if not nil, hears which file is being checked.
+func (m *Manager) PlanInstall(ctx context.Context, project string, progress func(string)) (*Plan, error) {
+	installed, err := m.scanWithout(project)
+	if err != nil {
+		return nil, err
+	}
+	return m.plan(ctx, installed, project, "", "", progress)
+}
+
+// PlanInstallVersion is PlanInstall for one chosen version instead of the
+// newest that fits.
+func (m *Manager) PlanInstallVersion(ctx context.Context, project, versionID string, progress func(string)) (*Plan, error) {
+	installed, err := m.scanWithout(project)
+	if err != nil {
+		return nil, err
+	}
+	return m.plan(ctx, installed, project, versionID, "", progress)
+}
+
+// CheckVersions works out, version by version, whether each would install,
+// without installing anything: report gets the plan or why it doesn't fit.
+// What the site says and dependencies that didn't fit are shared between
+// them. It stops early (with the context's error) when ctx ends.
+func (m *Manager) CheckVersions(ctx context.Context, project string, versionIDs []string, report func(versionID string, plan *Plan, err error)) error {
+	installed, err := m.scanWithout(project)
+	if err != nil {
+		return err
+	}
+	// One listing gives every version's details, instead of a request per version.
+	seen := newLookups()
+	vs, err := m.Source.Versions(ctx, project, m.Minecraft, game.ModrinthLoader(m.Minecraft))
+	if err != nil {
+		return err
+	}
+	seen.versions[project] = vs
+	for i := range vs {
+		seen.version[vs[i].ID] = &vs[i]
+	}
+	for _, id := range versionIDs {
+		plan, err := m.planWith(ctx, installed, project, id, "", nil, seen)
+		if ctx.Err() != nil {
+			return ctx.Err()
+		}
+		report(id, plan, err)
+	}
+	return nil
+}
+
+// Versions lists every version of a project for this instance's Minecraft
+// version and loader, newest first.
+func (m *Manager) Versions(ctx context.Context, project string) ([]Version, error) {
+	vs, err := m.Source.Versions(ctx, project, m.Minecraft, game.ModrinthLoader(m.Minecraft))
+	if err != nil {
+		return nil, err
+	}
+	sort.SliceStable(vs, func(a, b int) bool { return vs[a].Published > vs[b].Published })
+	return vs, nil
+}
+
+// scanWithout scans the mods folder, failing if the project is already in it.
+func (m *Manager) scanWithout(project string) ([]*Installed, error) {
 	installed, err := m.Scan()
 	if err != nil {
 		return nil, err
@@ -371,11 +471,11 @@ func (m *Manager) PlanInstall(ctx context.Context, project string) (*Plan, error
 			return nil, fmt.Errorf("%s is already installed", i.Name())
 		}
 	}
-	return m.plan(ctx, installed, project, "", "")
+	return installed, nil
 }
 
 // PlanUpdate works out how to replace an installed mod with a newer version.
-func (m *Manager) PlanUpdate(ctx context.Context, i *Installed, versionID string) (*Plan, error) {
+func (m *Manager) PlanUpdate(ctx context.Context, i *Installed, versionID string, progress func(string)) (*Plan, error) {
 	if i.Source == nil {
 		return nil, fmt.Errorf("%s isn't from a known source", i.Name())
 	}
@@ -383,15 +483,19 @@ func (m *Manager) PlanUpdate(ctx context.Context, i *Installed, versionID string
 	if err != nil {
 		return nil, err
 	}
-	return m.plan(ctx, installed, i.Source.Project, versionID, i.Key)
+	return m.plan(ctx, installed, i.Source.Project, versionID, i.Key, progress)
 }
 
-func (m *Manager) plan(ctx context.Context, installed []*Installed, project, versionID, replaceKey string) (*Plan, error) {
+func (m *Manager) plan(ctx context.Context, installed []*Installed, project, versionID, replaceKey string, progress func(string)) (*Plan, error) {
+	return m.planWith(ctx, installed, project, versionID, replaceKey, progress, newLookups())
+}
+
+func (m *Manager) planWith(ctx context.Context, installed []*Installed, project, versionID, replaceKey string, progress func(string), seen *lookups) (*Plan, error) {
 	base, err := m.envWith(installed, replaceKey)
 	if err != nil {
 		return nil, err
 	}
-	p := &planner{m: m, ctx: ctx, installed: installed, base: base, plan: &Plan{}, replace: map[string]string{}}
+	p := &planner{m: m, ctx: ctx, installed: installed, base: base, plan: &Plan{}, replace: map[string]string{}, progress: progress, seen: seen}
 	if replaceKey != "" {
 		p.replace[project] = replaceKey
 	}
@@ -452,29 +556,49 @@ func (p *planner) want(project, versionID, neededBy string, requested bool) erro
 		}
 		return nil
 	}
+	// A dependency that didn't fit one candidate of the mod needing it won't
+	// fit the next candidate either: the plan around it is the same.
+	key := p.failKey(project, versionID, neededBy)
+	if err, ok := p.seen.failed[key]; ok && neededBy != "" {
+		return err
+	}
+	err := p.resolve(project, versionID, neededBy, requested)
+	if err != nil && neededBy != "" && p.ctx.Err() == nil {
+		p.seen.failed[key] = err
+	}
+	return err
+}
 
+// resolve tries a project's candidate versions, newest first, until one fits.
+func (p *planner) resolve(project, versionID, neededBy string, requested bool) error {
 	var cands []Version
+	total := 1
 	if versionID != "" {
-		v, err := p.m.Source.Version(p.ctx, versionID)
+		v, err := p.lookupVersion(versionID)
 		if err != nil {
 			return err
 		}
 		cands = []Version{*v}
 	} else {
-		vs, err := p.m.Source.Versions(p.ctx, project, p.m.Minecraft, game.ModrinthLoader(p.m.Minecraft))
+		vs, err := p.lookupVersions(project)
 		if err != nil {
 			return err
 		}
+		total = len(vs)
 		cands = candidates(vs, maxCandidates)
 	}
 
-	fail := &ErrNoFit{Project: project, Tried: len(cands)}
+	fail := &ErrNoFit{Project: project, Tried: len(cands), Untried: total - len(cands)}
 	for ci, v := range cands {
+		if err := p.ctx.Err(); err != nil {
+			return err
+		}
+		p.say("%s (%d of %d)", v.File.Name, ci+1, len(cands))
 		problems, err := p.try(v, neededBy, requested)
 		if err != nil {
 			var inClient *ErrInClient
 			var installed *ErrInstalled
-			if errors.As(err, &inClient) || errors.As(err, &installed) {
+			if errors.As(err, &inClient) || errors.As(err, &installed) || p.ctx.Err() != nil {
 				return err
 			}
 			problems = []Problem{{Severity: Error, Text: err.Error()}}
@@ -494,23 +618,70 @@ func (p *planner) want(project, versionID, neededBy string, requested bool) erro
 			fail.Project = name
 		}
 	}
+	if fail.Project == project { // still an id: ask the site for the name
+		if title, err := p.m.Source.Title(p.ctx, project); err == nil && title != "" {
+			fail.Project = title
+		}
+	}
 	return fail
 }
 
+// failKey identifies a dependency lookup: the project, a pinned version,
+// and what's planned so far apart from the mod that needs it.
+func (p *planner) failKey(project, versionID, neededBy string) string {
+	var b strings.Builder
+	b.WriteString(project + "@" + versionID)
+	for _, s := range p.plan.Steps {
+		if s.Version.ProjectID != neededBy {
+			b.WriteString("|" + s.Version.ID)
+		}
+	}
+	return b.String()
+}
+
+func (p *planner) lookupVersions(project string) ([]Version, error) {
+	if vs, ok := p.seen.versions[project]; ok {
+		return vs, nil
+	}
+	vs, err := p.m.Source.Versions(p.ctx, project, p.m.Minecraft, game.ModrinthLoader(p.m.Minecraft))
+	if err != nil {
+		return nil, err
+	}
+	p.seen.versions[project] = vs
+	return vs, nil
+}
+
+func (p *planner) lookupVersion(id string) (*Version, error) {
+	if v, ok := p.seen.version[id]; ok {
+		return v, nil
+	}
+	v, err := p.m.Source.Version(p.ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	p.seen.version[id] = v
+	return v, nil
+}
+
+func (p *planner) say(format string, args ...any) {
+	if p.progress != nil {
+		p.progress(fmt.Sprintf(format, args...))
+	}
+}
+
+// nameOf is a version's mod name if its metadata was already read (a version
+// rejected on what the site says isn't looked into just for this).
 func (p *planner) nameOf(v Version) string {
-	path, err := p.m.fetch(p.ctx, v)
-	if err != nil {
-		return ""
+	if units, err := p.m.cachedUnits(v); err == nil && len(units) > 0 {
+		return units[0].title()
 	}
-	meta, err := modmeta.ReadJar(path)
-	if err != nil {
-		return ""
-	}
-	return UnitsOf(meta)[0].title()
+	return ""
 }
 
 // try plans one candidate version. It returns nil problems on success; on
-// failure the plan is left as it was.
+// failure the plan is left as it was. Cheap checks come first: what the site
+// says, then the jar's own requirements, and only then its dependencies,
+// each of which may mean more downloads.
 func (p *planner) try(v Version, neededBy string, requested bool) ([]Problem, error) {
 	// Some requirements exist only on the site: a dependency pinned to an
 	// exact version. If that's installed at an older version, this one doesn't
@@ -521,26 +692,35 @@ func (p *planner) try(v Version, neededBy string, requested bool) ([]Problem, er
 			continue
 		}
 		if i := p.installedProject(d.ProjectID); i != nil && i.Source.VersionID != d.VersionID {
-			pinned, err1 := p.m.Source.Version(p.ctx, d.VersionID)
-			have, err2 := p.m.Source.Version(p.ctx, i.Source.VersionID)
+			pinned, err1 := p.lookupVersion(d.VersionID)
+			have, err2 := p.lookupVersion(i.Source.VersionID)
 			if err1 == nil && err2 == nil && pinned.Published > have.Published {
 				return []Problem{{Severity: Error, Text: fmt.Sprintf("needs %s %s, you have %s (update it first)", i.Name(), pinned.Number, i.Source.Version)}}, nil
 			}
 		}
 	}
+	if problems := p.siteProblems(v); problems != nil {
+		return problems, nil
+	}
 
-	path, err := p.m.fetch(p.ctx, v)
+	units, err := p.m.versionUnits(p.ctx, v)
+	if errors.Is(err, modmeta.ErrNotAMod) {
+		return []Problem{{Severity: Error, Text: v.File.Name + " isn't a Fabric mod"}}, nil
+	}
 	if err != nil {
 		return nil, err
 	}
-	meta, err := modmeta.ReadJar(path)
-	if err != nil {
-		return []Problem{{Severity: Error, Text: v.File.Name + " isn't a Fabric mod"}}, nil
-	}
-	units := UnitsOf(meta)
+	path := p.m.jarPath(v)
 	if p.m.Layer != nil {
 		ids := p.m.Layer.IDs()
 		if name, ok := ids[units[0].ID]; ok {
+			if !requested {
+				return nil, nil // a dependency the client already provides
+			}
+			if !p.m.Layer.Has(units[0].ID) {
+				// Provided by a client mod under another id.
+				return nil, &ErrInClient{Name: units[0].title(), Mod: name}
+			}
 			return nil, &ErrInClient{Name: name}
 		}
 	}
@@ -567,34 +747,33 @@ func (p *planner) try(v Version, neededBy string, requested bool) ([]Problem, er
 	step := Step{Version: v, Units: units, Path: path, Requested: requested, NeededBy: neededBy, Replaces: p.replace[v.ProjectID]}
 	p.plan.Steps = append(p.plan.Steps, step)
 
+	// Its own requirements (Minecraft, loader, what's installed) before its
+	// dependencies: a version that can't load anyway isn't worth resolving.
+	// Dependencies it's missing are what the next step looks for.
+	if problems := withoutMissing(p.env().Check(units, step.Name(), "plan:"+v.ProjectID)); HasErrors(problems) {
+		rollback()
+		return problems, nil
+	}
+
 	for _, d := range v.Deps {
-		switch d.Kind {
-		case "required":
-			if err := p.want(d.ProjectID, d.VersionID, v.ProjectID, false); err != nil {
-				// Multi-loader uploads often list a dependency that only exists
-				// for other loaders (KotlinLangForge for Zoomify). With no build
-				// for this loader at all it can't be meant for us; if the jar
-				// really needs something, its fabric.mod.json check below says so.
-				var noFit *ErrNoFit
-				if errors.As(err, &noFit) && noFit.Tried == 0 {
-					continue
-				}
+		if d.Kind != "required" {
+			continue
+		}
+		if err := p.want(d.ProjectID, d.VersionID, v.ProjectID, false); err != nil {
+			if p.ctx.Err() != nil {
 				rollback()
-				var inClient *ErrInClient
-				if errors.As(err, &inClient) {
-					return []Problem{{Severity: Error, Text: "needs " + inClient.Error()}}, nil
-				}
-				return []Problem{{Severity: Error, Text: "dependency: " + err.Error()}}, nil
+				return nil, p.ctx.Err()
 			}
-		case "incompatible":
-			if i := p.installedProject(d.ProjectID); i != nil {
-				rollback()
-				return []Problem{{Severity: Error, Text: fmt.Sprintf("doesn't work with %s (installed)", i.Name())}}, nil
+			// Multi-loader uploads often list a dependency that only exists
+			// for other loaders (KotlinLangForge for Zoomify). With no build
+			// for this loader at all it can't be meant for us; if the jar
+			// really needs something, its fabric.mod.json check below says so.
+			var noFit *ErrNoFit
+			if errors.As(err, &noFit) && noFit.Tried == 0 {
+				continue
 			}
-			if mod := p.clientMod(d.ProjectID); mod != nil && p.m.Layer.Has(mod.ID) {
-				rollback()
-				return []Problem{{Severity: Error, Text: fmt.Sprintf("doesn't work with %s (part of the Armstrong client)", mod.Name)}}, nil
-			}
+			rollback()
+			return []Problem{{Severity: Error, Text: "dependency: " + err.Error()}}, nil
 		}
 	}
 
@@ -607,19 +786,148 @@ func (p *planner) try(v Version, neededBy string, requested bool) ([]Problem, er
 	return nil, nil
 }
 
-// fetch downloads a version's jar into the cache (by sha1) and returns its path.
+// siteProblems are what a version's page says against it: a dependency that's
+// a client add-on the player hasn't switched on, or a mod it doesn't work
+// with. Checked before the jar is downloaded.
+func (p *planner) siteProblems(v Version) []Problem {
+	for _, d := range v.Deps {
+		switch d.Kind {
+		case "required":
+			if mod := p.clientMod(d.ProjectID); mod != nil && !p.m.Layer.Has(mod.ID) {
+				return []Problem{{Severity: Error, Text: addonNeeded(mod.Name)}}
+			}
+		case "incompatible":
+			if i := p.installedProject(d.ProjectID); i != nil {
+				return []Problem{{Severity: Error, Text: fmt.Sprintf("doesn't work with %s (installed)", i.Name())}}
+			}
+			if mod := p.clientMod(d.ProjectID); mod != nil && p.m.Layer.Has(mod.ID) {
+				return []Problem{{Severity: Error, Text: fmt.Sprintf("doesn't work with %s (part of the Armstrong client)", mod.Name)}}
+			}
+		}
+	}
+	return nil
+}
+
+// addonNeeded says a mod needs a client add-on that's switched off.
+func addonNeeded(name string) string {
+	return "needs " + name + ", an Armstrong add-on: switch it on under Client add-ons"
+}
+
+// jarPath is where a version's jar is kept in the cache (by sha1).
+func (m *Manager) jarPath(v Version) string {
+	return filepath.Join(m.CacheDir, v.File.SHA1+".jar")
+}
+
+// fetch downloads a version's jar into the cache and returns its path.
 func (m *Manager) fetch(ctx context.Context, v Version) (string, error) {
 	if v.File.SHA1 == "" {
 		return "", fmt.Errorf("%s has no checksum", v.File.Name)
 	}
-	path := filepath.Join(m.CacheDir, v.File.SHA1+".jar")
+	path := m.jarPath(v)
 	err := m.DL.Fetch(ctx, []download.Item{{URL: v.File.URL, Path: path, SHA1: v.File.SHA1, Size: v.File.Size}}, nil)
 	return path, err
 }
 
-// Commit carries out a plan: copies jars into the mods folder, removes the
-// versions they replace, and records who needs what.
-func (m *Manager) Commit(plan *Plan) error {
+// unitsFile is a version's metadata kept next to the jar cache, so looking
+// at a version again needs no network.
+type unitsFile struct {
+	Units   []Unit `json:"units,omitempty"`
+	NotAMod bool   `json:"notAMod,omitempty"`
+}
+
+func (m *Manager) unitsPath(v Version) string {
+	return filepath.Join(m.CacheDir, v.File.SHA1+".units.json")
+}
+
+// versionUnits reads what a version's jar holds, downloading as little as it
+// can: the jar if it's already in the cache, else metadata kept from an
+// earlier look, else just the jar's zip index and fabric.mod.json files over
+// HTTP range requests (a 30 MB mod costs well under 1 MB this way). The jar
+// itself is downloaded only when the site can't serve ranges; installing
+// downloads it in Commit. Errors wrap modmeta.ErrNotAMod for a jar that
+// isn't a Fabric mod.
+func (m *Manager) versionUnits(ctx context.Context, v Version) ([]Unit, error) {
+	if v.File.SHA1 == "" {
+		return nil, fmt.Errorf("%s has no checksum", v.File.Name)
+	}
+	if units, err := m.cachedUnits(v); err == nil || errors.Is(err, modmeta.ErrNotAMod) {
+		return units, err
+	}
+	meta, err := modmeta.Read(m.DL.RangeReader(ctx, v.File.URL, v.File.Size), v.File.Size)
+	switch {
+	case ctx.Err() != nil:
+		return nil, ctx.Err()
+	case err != nil && !errors.Is(err, modmeta.ErrNotAMod):
+		// No ranges, or a jar that can't be read in pieces: download it.
+		path, err := m.fetch(ctx, v)
+		if err != nil {
+			return nil, err
+		}
+		return readUnits(path)
+	}
+	var file unitsFile
+	if err == nil {
+		file.Units = UnitsOf(meta)
+	} else {
+		file.NotAMod = true
+	}
+	if data, merr := json.Marshal(file); merr == nil && os.MkdirAll(m.CacheDir, 0o755) == nil {
+		os.WriteFile(m.unitsPath(v), data, 0o644) // best effort: it's only a cache
+	}
+	if file.NotAMod {
+		return nil, modmeta.ErrNotAMod
+	}
+	return file.Units, nil
+}
+
+// cachedUnits is a version's metadata from the cache only (no network).
+func (m *Manager) cachedUnits(v Version) ([]Unit, error) {
+	if v.File.SHA1 == "" {
+		return nil, fs.ErrNotExist
+	}
+	if jar := m.jarPath(v); download.Valid(jar, v.File.SHA1, v.File.Size) {
+		return readUnits(jar)
+	}
+	data, err := os.ReadFile(m.unitsPath(v))
+	if err != nil {
+		return nil, err
+	}
+	var file unitsFile
+	if err := json.Unmarshal(data, &file); err != nil {
+		return nil, err
+	}
+	if file.NotAMod {
+		return nil, modmeta.ErrNotAMod
+	}
+	if len(file.Units) == 0 {
+		return nil, fs.ErrNotExist
+	}
+	return file.Units, nil
+}
+
+func readUnits(jar string) ([]Unit, error) {
+	meta, err := modmeta.ReadJar(jar)
+	if err != nil {
+		if errors.Is(err, modmeta.ErrNotAMod) {
+			return nil, err
+		}
+		return nil, fmt.Errorf("%w: %v", modmeta.ErrNotAMod, err)
+	}
+	return UnitsOf(meta), nil
+}
+
+// Commit carries out a plan: downloads its jars (checking a plan reads only
+// their metadata), copies them into the mods folder, removes the versions
+// they replace, and records who needs what. Nothing in the mods folder
+// changes unless every download worked.
+func (m *Manager) Commit(ctx context.Context, plan *Plan) error {
+	var items []download.Item
+	for _, s := range plan.Steps {
+		items = append(items, download.Item{URL: s.Version.File.URL, Path: s.Path, SHA1: s.Version.File.SHA1, Size: s.Version.File.Size})
+	}
+	if err := m.DL.Fetch(ctx, items, nil); err != nil {
+		return fmt.Errorf("downloading: %w", err)
+	}
 	if err := os.MkdirAll(m.ModsDir, 0o755); err != nil {
 		return err
 	}
