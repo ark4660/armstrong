@@ -191,11 +191,24 @@ func TestCandidatesAndPins(t *testing.T) {
 		{ID: "r2", VersionType: "release", DatePublished: "2026-10-01"},
 	}
 	var got []string
-	for _, v := range candidates(vs) {
+	for _, v := range candidates(vs, false) {
 		got = append(got, v.ID)
 	}
 	if !reflect.DeepEqual(got, []string{"r2", "r1", "b1"}) {
 		t.Errorf("candidates = %v", got)
+	}
+	if got := candidates(vs, true); len(got) != 3 {
+		t.Errorf("alphas allowed but releases exist: %d candidates, want the 3 non-alphas", len(got))
+	}
+	alphaOnly := []modrinth.Version{
+		{ID: "a1", VersionType: "alpha", DatePublished: "2026-10-01"},
+		{ID: "a2", VersionType: "alpha", DatePublished: "2026-10-20"},
+	}
+	if got := candidates(alphaOnly, false); len(got) != 0 {
+		t.Errorf("alphas picked without being allowed: %d", len(got))
+	}
+	if got := candidates(alphaOnly, true); len(got) != 2 || got[0].ID != "a2" {
+		t.Errorf("alpha-only candidates = %v", got)
 	}
 
 	r := &resolver{chosen: map[string]*choice{"sodium": {version: &modrinth.Version{ID: "s-092"}}}}

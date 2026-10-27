@@ -6,6 +6,19 @@
   "fabricLoader": "0.20.1",
   "mods": [
     {
+      "id": "modernfix",
+      "name": "ModernFix",
+      "version": "5.25.1+mc1.21.1",
+      "project": "nmDcB62a",
+      "slug": "modernfix",
+      "versionId": "NnNX8LBn",
+      "file": "modernfix-fabric-5.25.1+mc1.21.1.jar",
+      "url": "https://cdn.modrinth.com/data/nmDcB62a/versions/NnNX8LBn/modernfix-fabric-5.25.1%2Bmc1.21.1.jar",
+      "sha1": "4ab39e9c736e7204146792c545ec5b29fc0a3872",
+      "sha512": "dc67d6e023e1fcdeaf7837917c477cba212c611dfc2463c6ea021319c644087c79b477e0ea8194e113ddd7332fd5c6d82baa47c291eaac7f4a86252507b4e19f",
+      "size": 471258
+    },
+    {
       "id": "fabric-api",
       "provides": [
         "fabric"
@@ -139,6 +152,19 @@
       "size": 232325
     },
     {
+      "id": "krypton",
+      "name": "Krypton",
+      "version": "0.2.8",
+      "project": "fQEb0iXm",
+      "slug": "krypton",
+      "versionId": "Acz3ttTp",
+      "file": "krypton-0.2.8.jar",
+      "url": "https://cdn.modrinth.com/data/fQEb0iXm/versions/Acz3ttTp/krypton-0.2.8.jar",
+      "sha1": "73e792eb5f120787becda4b87b6ff18b26caea50",
+      "sha512": "5f8cf96c79bfd4d893f1d70da582e62026bed36af49a7fa7b1e00fb6efb28d9ad6a1eec147020496b4fe38693d33fe6bfcd1eebbd93475612ee44290c2483784",
+      "size": 161045
+    },
+    {
       "id": "iris",
       "name": "Iris Shaders",
       "version": "1.8.8+mc1.21.1",
@@ -253,6 +279,37 @@
       "sha1": "3705800d44eddbb417d8ca741116883525fbb3b2",
       "sha512": "97ec529d8d420ebe68df851979f3544c1d290088c2c9ce1458ee046fb5011cfb12459f0bf78cf38e42b74dca1bae6986b89336b4e5764f0587ba13a3f3d437f7",
       "size": 210786498
+    },
+    {
+      "id": "c2me",
+      "name": "Concurrent Chunk Management Engine (Fabric)",
+      "version": "0.4.0-alpha.0.30+1.21.1",
+      "optional": true,
+      "project": "VSNURh3q",
+      "slug": "c2me-fabric",
+      "versionId": "KxcgERSN",
+      "file": "c2me-fabric-mc1.21.1-0.4.0-alpha.0.30.jar",
+      "url": "https://cdn.modrinth.com/data/VSNURh3q/versions/KxcgERSN/c2me-fabric-mc1.21.1-0.4.0-alpha.0.30.jar",
+      "sha1": "7ce266eb1d7ff617751ed1f0ebb203662ed641b3",
+      "sha512": "6fa50f7d626c0d0f9b877c76a2b176d8d22db17bf0530aa07ddd2a7d2f65a6328eb5326376aa28ae474d6c08610842c975548db4efc253f8386fdaefc60e08db",
+      "size": 3810456
+    },
+    {
+      "id": "scalablelux",
+      "provides": [
+        "starlight"
+      ],
+      "name": "ScalableLux",
+      "version": "0.1.0.1+fabric.d0d58ab",
+      "optional": true,
+      "project": "Ps1zyz6x",
+      "slug": "scalablelux",
+      "versionId": "Yx1tgJMI",
+      "file": "ScalableLux-0.1.0.1+fabric.d0d58ab-all.jar",
+      "url": "https://cdn.modrinth.com/data/Ps1zyz6x/versions/Yx1tgJMI/ScalableLux-0.1.0.1%2Bfabric.d0d58ab-all.jar",
+      "sha1": "2ce889d9b1b210eef005ea03c3bbb39289c26e3f",
+      "sha512": "bbfe02184c3bf3b0da28175574a5a236ce7c9acc00069addd69770857f2ac572924893f3eb033bbbc965afa9779c7a7f8fc54168f9e90481a40de92f6ee3645f",
+      "size": 177266
     }
   ]
 }

@@ -2,8 +2,10 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"path/filepath"
+	"slices"
 	"sort"
 
 	"github.com/ark4660/armstrong/internal/download"
@@ -20,6 +22,12 @@ type ResolveRequest struct {
 	FabricLoader string
 	Core         []string // Modrinth slugs or ids, always enabled
 	Optional     []string // add-ons
+	// IfAvailable are core mods left out of Minecraft versions they have
+	// no usable build for, instead of failing the whole manifest.
+	IfAvailable []string
+	// AllowAlpha may resolve to an alpha build when they have no release or
+	// beta for the version (projects that only publish alphas).
+	AllowAlpha []string
 }
 
 // maxCandidates is how many versions of a project are tried, newest first.
@@ -32,7 +40,12 @@ type resolver struct {
 	mc     string
 	chosen map[string]*choice // by Modrinth project id
 	order  []string
+
+	allowAlpha []string
 }
+
+// errNoVersion: a project has no usable build for the Minecraft version.
+var errNoVersion = errors.New("no usable version")
 
 type choice struct {
 	version  *modrinth.Version
@@ -46,7 +59,12 @@ type choice struct {
 // an exact version on Modrinth (Iris pins a Sodium build, for example). Every
 // jar is downloaded into tmp to read its fabric.mod.json.
 func Resolve(ctx context.Context, mr *modrinth.Client, dl *download.Client, tmp string, req ResolveRequest) (*Manifest, error) {
-	r := &resolver{mr: mr, dl: dl, tmp: tmp, mc: req.Minecraft, chosen: map[string]*choice{}}
+	r := &resolver{mr: mr, dl: dl, tmp: tmp, mc: req.Minecraft, chosen: map[string]*choice{}, allowAlpha: req.AllowAlpha}
+	for _, slug := range req.IfAvailable {
+		if _, err := r.resolve(ctx, slug, false); err != nil && !errors.Is(err, errNoVersion) {
+			return nil, err
+		}
+	}
 	for _, slug := range req.Core {
 		if _, err := r.resolve(ctx, slug, false); err != nil {
 			return nil, err
@@ -120,13 +138,14 @@ func (r *resolver) resolve(ctx context.Context, idOrSlug string, optional bool) 
 	if err != nil {
 		return "", err
 	}
-	for _, v := range candidates(versions) {
+	alpha := slices.Contains(r.allowAlpha, idOrSlug)
+	for _, v := range candidates(versions, alpha) {
 		if r.pinsConflict(v) {
 			continue
 		}
 		return r.choose(ctx, v, optional)
 	}
-	return "", fmt.Errorf("no usable Fabric version of %s for Minecraft %s", idOrSlug, r.mc)
+	return "", fmt.Errorf("%w: no Fabric build of %s for Minecraft %s", errNoVersion, idOrSlug, r.mc)
 }
 
 func (r *resolver) choose(ctx context.Context, v *modrinth.Version, optional bool) (string, error) {
@@ -195,15 +214,18 @@ func (r *resolver) pinsConflict(v *modrinth.Version) bool {
 	return false
 }
 
-// candidates orders versions: releases newest first, then betas; no alphas.
-func candidates(vs []modrinth.Version) []*modrinth.Version {
-	var rel, beta []*modrinth.Version
+// candidates orders versions: releases newest first, then betas. Alphas
+// only when allowed, and only if there's nothing else.
+func candidates(vs []modrinth.Version, alpha bool) []*modrinth.Version {
+	var rel, beta, alphas []*modrinth.Version
 	for i := range vs {
 		switch vs[i].VersionType {
 		case "release":
 			rel = append(rel, &vs[i])
 		case "beta":
 			beta = append(beta, &vs[i])
+		case "alpha":
+			alphas = append(alphas, &vs[i])
 		}
 	}
 	byDate := func(s []*modrinth.Version) {
@@ -212,6 +234,10 @@ func candidates(vs []modrinth.Version) []*modrinth.Version {
 	byDate(rel)
 	byDate(beta)
 	out := append(rel, beta...)
+	if len(out) == 0 && alpha {
+		byDate(alphas)
+		out = alphas
+	}
 	if len(out) > maxCandidates {
 		out = out[:maxCandidates]
 	}

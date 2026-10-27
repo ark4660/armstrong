@@ -460,8 +460,13 @@ func cmdLaunch(ctx context.Context, paths app.Paths, accounts *auth.Accounts, ar
 // Mods in every client release. Required dependencies (Fabric API) are
 // added automatically.
 var (
-	clientCore     = []string{"fabric-api", "sodium", "lithium", "ferrite-core", "immediatelyfast", "entityculling", "dynamic-fps", "modmenu"}
-	clientOptional = []string{"iris", "sodium-extra", "reeses-sodium-options", "moreculling", "badoptimizations", "flashback"}
+	clientCore     = []string{"fabric-api", "sodium", "lithium", "ferrite-core", "immediatelyfast", "entityculling", "dynamic-fps", "modmenu", "krypton"}
+	clientOptional = []string{"iris", "sodium-extra", "reeses-sodium-options", "moreculling", "badoptimizations", "flashback", "c2me-fabric", "scalablelux"}
+	// Core where a build exists (ModernFix has none for 26.x yet).
+	clientCoreIfAvailable = []string{"modernfix"}
+	// Projects that only publish alphas. They're add-ons until benchmarked:
+	// C2ME (chunk loading) and ScalableLux (lighting) touch world data.
+	clientAlphaOK = []string{"c2me-fabric", "scalablelux"}
 
 	// Legacy Fabric versions (before 1.14) have none of the above; this is
 	// the best of what exists for them on Modrinth.
@@ -492,13 +497,13 @@ func cmdClient(ctx context.Context, paths app.Paths, args []string) error {
 		return err
 	}
 	defer os.RemoveAll(tmp)
-	core, optional := clientCore, clientOptional
+	core, optional, ifAvailable := clientCore, clientOptional, clientCoreIfAvailable
 	if game.IsLegacyFabric(*mc) {
-		core, optional = legacyClientCore, legacyClientOptional
+		core, optional, ifAvailable = legacyClientCore, legacyClientOptional, nil
 	}
 	m, err := client.Resolve(ctx, &modrinth.Client{DL: dl}, dl, tmp, client.ResolveRequest{
 		Client: app.Name, Version: app.Version, Minecraft: *mc, FabricLoader: loader,
-		Core: core, Optional: optional,
+		Core: core, Optional: optional, IfAvailable: ifAvailable, AllowAlpha: clientAlphaOK,
 	})
 	if err != nil {
 		return err

@@ -136,6 +136,19 @@
       "size": 254959
     },
     {
+      "id": "krypton",
+      "name": "Krypton",
+      "version": "0.3.2",
+      "project": "fQEb0iXm",
+      "slug": "krypton",
+      "versionId": "UugdIYJw",
+      "file": "krypton-0.3.2.jar",
+      "url": "https://cdn.modrinth.com/data/fQEb0iXm/versions/UugdIYJw/krypton-0.3.2.jar",
+      "sha1": "21b21cb88e412f0bce73b6609de6dd6aca958d7d",
+      "sha512": "d1d57ebd41395b75b01f130cd9503eb8d208212424a399ff9f367f50be8fbc1c6472442b33c686e777c3148f6a609520e8fb732c755157c358cb207fd4d1123a",
+      "size": 268849
+    },
+    {
       "id": "iris",
       "name": "Iris Shaders",
       "version": "1.11.7+mc26.3",
@@ -250,6 +263,37 @@
       "sha1": "4fd7d2d677332f58b00107b27615379eadc6cfcb",
       "sha512": "80d194d117352942ebf2bc96914e5f0f550ab857204cda5b362459110ea22a38332825ecebf5ee3fc54d4f01c72279c0a06e45f26e26b62c49015e208167242e",
       "size": 201008177
+    },
+    {
+      "id": "c2me",
+      "name": "Concurrent Chunk Management Engine (Fabric)",
+      "version": "0.4.2-alpha.0.106+26.3",
+      "optional": true,
+      "project": "VSNURh3q",
+      "slug": "c2me-fabric",
+      "versionId": "gKKkuSYc",
+      "file": "c2me-fabric-mc26.3-0.4.2-alpha.0.106.jar",
+      "url": "https://cdn.modrinth.com/data/VSNURh3q/versions/gKKkuSYc/c2me-fabric-mc26.3-0.4.2-alpha.0.106.jar",
+      "sha1": "4223867c5a493b4206027e84234460506dae5a57",
+      "sha512": "047ed3fe3869d0185c6d1e94fd1e725b2ad40047e4929f22692090570af28d0075849cb65335b602658859c7d437cce51c94082c0c798617314764cfdc0a1d71",
+      "size": 4195982
+    },
+    {
+      "id": "scalablelux",
+      "provides": [
+        "starlight"
+      ],
+      "name": "ScalableLux",
+      "version": "0.3.0-alpha.0.6+26.3",
+      "optional": true,
+      "project": "Ps1zyz6x",
+      "slug": "scalablelux",
+      "versionId": "g4eqNSKd",
+      "file": "ScalableLux-fabric-mc26.3-0.3.0-alpha.0.6-all.jar",
+      "url": "https://cdn.modrinth.com/data/Ps1zyz6x/versions/g4eqNSKd/ScalableLux-fabric-mc26.3-0.3.0-alpha.0.6-all.jar",
+      "sha1": "d51dcbe901452a1cb378139ca351009254e7ab0d",
+      "sha512": "ded5a939fb20ab81c1f33b147ca9b98050773dbb28dff16df939c7d567b626809522994ec8dbfb99e7f498dc6a4e62f25e141a87d18efb43f73fc5ad1569ccc9",
+      "size": 193021
     }
   ]
 }
