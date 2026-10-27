@@ -61,6 +61,7 @@ public final class ModuleManager {
 	}
 
 	public void tick(Minecraft mc) {
+		HudModule.ticks++;
 		for (Module m : modules) {
 			if (m.isActive()) {
 				m.tick(mc);
@@ -93,19 +94,28 @@ public final class ModuleManager {
 			}
 		}
 		// Panels in the same corner stack, in menu order, so none overlap.
-		java.util.Map<String, Integer> used = new java.util.HashMap<>();
+		java.util.Arrays.fill(stacked, 0);
 		for (Module m : modules) {
 			if (m instanceof HudModule hud && hud.isActive()) {
-				int before = used.getOrDefault(hud.anchor(), 0);
-				used.put(hud.anchor(), before + hud.render(g, mc, before, editing));
+				int corner = corner(hud.anchor());
+				stacked[corner] += hud.render(g, mc, stacked[corner], editing);
 			}
 		}
 		renderIndicators(g);
 	}
 
+	/** How far each corner's panels reach this frame (top left, top right, bottom left, bottom right). */
+	private final int[] stacked = new int[4];
+
+	private static int corner(String anchor) {
+		return (anchor.startsWith("Bottom") ? 2 : 0) + (anchor.endsWith("right") ? 1 : 0);
+	}
+
+	private final List<Term.Line> tags = new ArrayList<>();
+
 	/** Status tags like [sprint: toggled] in a row, centred above the hotbar and health. */
 	private void renderIndicators(GuiGraphicsExtractor g) {
-		List<Term.Line> tags = new ArrayList<>();
+		tags.clear();
 		for (Module m : modules) {
 			if (m instanceof Indicator ind && m.isActive() && ind.indicatorLabel() != null) {
 				tags.add(new Term.Line().add("[" + ind.indicatorLabel() + ": ", Theme.TEXT)

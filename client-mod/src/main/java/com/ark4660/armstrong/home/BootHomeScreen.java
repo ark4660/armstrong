@@ -17,6 +17,15 @@ import net.minecraft.client.gui.GuiGraphicsExtractor;
 public final class BootHomeScreen extends HomeScreen {
 	private static final int ROW = 11;
 
+	/** The continue/rejoin entries for the side panel, found once per init. */
+	private List<HomeScreen.Action> resume = List.of();
+
+	@Override
+	protected void init() {
+		super.init();
+		resume = actions.stream().filter(a -> a.name().equals("continue") || a.name().equals("rejoin")).toList();
+	}
+
 	@Override
 	protected boolean onKey(int key, int modifiers) {
 		if (handleSwitch(key)) {
@@ -105,8 +114,6 @@ public final class BootHomeScreen extends HomeScreen {
 
 	/** The right-hand panel: jump back into the last world or server. */
 	private void drawContinue(GuiGraphicsExtractor g, int accent, int minX, int top) {
-		List<HomeScreen.Action> resume = actions.stream()
-				.filter(a -> a.name().equals("continue") || a.name().equals("rejoin")).toList();
 		int pw = 170;
 		int px = width - 16 - pw;
 		if (px < minX) {

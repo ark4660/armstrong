@@ -26,6 +26,9 @@ public abstract class HudModule extends Module {
 	protected final Setting.Number scale;
 	protected final Setting.Bool custom;
 
+	/** Client ticks so far: text panels rebuild their lines once per tick. */
+	static long ticks;
+
 	/** Where the panel was last drawn, in GUI pixels (scaled); 0 width if hidden. For the HUD editor. */
 	public int lastX, lastY, lastW, lastH;
 
@@ -162,16 +165,30 @@ public abstract class HudModule extends Module {
 		/** The lines to show; empty hides the panel. */
 		protected abstract List<Term.Line> lines(Minecraft mc);
 
+		/**
+		 * Whether the lines change faster than the game ticks (a stopwatch's
+		 * hundredths). Other panels are rebuilt once per tick, not every frame:
+		 * fps, coordinates and ping don't change in between.
+		 */
+		protected boolean live() {
+			return false;
+		}
+
 		private List<Term.Line> cached;
+		private int cachedWidth;
+		private long cachedTick = -1;
 
 		@Override
 		protected int width(Minecraft mc) {
-			cached = lines(mc);
-			int w = 0;
-			for (Term.Line l : cached) {
-				w = Math.max(w, l.width());
+			if (cached == null || cachedTick != ticks || live()) {
+				cached = lines(mc);
+				cachedTick = ticks;
+				cachedWidth = 0;
+				for (Term.Line l : cached) {
+					cachedWidth = Math.max(cachedWidth, l.width());
+				}
 			}
-			return w;
+			return cachedWidth;
 		}
 
 		@Override

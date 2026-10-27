@@ -46,10 +46,14 @@ import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 /*import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 *///?}
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.resources.ResourceManager;
 
 public final class ArmstrongClient implements ClientModInitializer {
 	public static final String MOD_ID = "armstrong";
@@ -158,6 +162,18 @@ public final class ArmstrongClient implements ClientModInitializer {
 		ui = modules.register(new Interface()); // last: it's settings, not a feature
 		Theme.bind(ui);
 		modules.load();
+		// Resource packs can change the fonts: measure text again after a reload.
+		ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(new SimpleSynchronousResourceReloadListener() {
+			@Override
+			public Identifier getFabricId() {
+				return id("text_cache");
+			}
+
+			@Override
+			public void onResourceManagerReload(ResourceManager manager) {
+				com.ark4660.armstrong.ui.Term.clearCache();
+			}
+		});
 		Cosmetics.start(FabricLoader.getInstance().getConfigDir());
 		Recent.init(FabricLoader.getInstance().getConfigDir().resolve("armstrong-recent.json"));
 		// Remember the world or server for the home screen's continue entries.

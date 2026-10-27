@@ -1,7 +1,9 @@
 package com.ark4660.armstrong.ui;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.ark4660.armstrong.ArmstrongClient;
 
@@ -34,8 +36,39 @@ public final class Term {
 		return Theme.monospace() ? c.withStyle(style -> style.withFont(MONO)) : c;
 	}
 
+	// The HUD and menus draw the same strings every frame: each one's text
+	// component and width are kept until the font changes (a resource
+	// reload or the monospace setting), so they're built and measured once.
+	private record Measured(MutableComponent text, int width) {}
+
+	private static final int CACHE_MAX = 4096;
+	private static final Map<String, Measured> measured = new HashMap<>();
+	private static final Map<String, List<String>> wrapped = new HashMap<>();
+	private static boolean cachedMonospace;
+
+	/** Forgets every measured string (called after a resource reload). */
+	public static void clearCache() {
+		measured.clear();
+		wrapped.clear();
+	}
+
+	private static Measured measure(String s) {
+		boolean mono = Theme.monospace();
+		if (mono != cachedMonospace || measured.size() > CACHE_MAX) {
+			clearCache();
+			cachedMonospace = mono;
+		}
+		Measured m = measured.get(s);
+		if (m == null) {
+			MutableComponent c = text(s);
+			m = new Measured(c, font().width(c));
+			measured.put(s, m);
+		}
+		return m;
+	}
+
 	public static int width(String s) {
-		return font().width(text(s));
+		return measure(s).width();
 	}
 
 	/** Width of one character cell, for laying out columns. */
@@ -45,9 +78,9 @@ public final class Term {
 
 	public static void draw(GuiGraphicsExtractor g, String s, int x, int y, int color) {
 		//? if >=26 {
-		g.text(font(), text(s), x, y, color, false);
+		g.text(font(), measure(s).text(), x, y, color, false);
 		//?} else {
-		/*g.drawString(font(), text(s), x, y, color, false);
+		/*g.drawString(font(), measure(s).text(), x, y, color, false);
 		*///?}
 	}
 
@@ -93,12 +126,13 @@ public final class Term {
 
 		public int draw(GuiGraphicsExtractor g, int x, int y) {
 			for (Span s : spans) {
+				int w = s.width();
 				if (s.bar) {
-					g.fill(x, y, x + s.width(), y + 7, s.color);
+					g.fill(x, y, x + w, y + 7, s.color);
 				} else {
 					Term.draw(g, s.text, x, y, s.color);
 				}
-				x += s.width();
+				x += w;
 			}
 			return x;
 		}
@@ -135,6 +169,22 @@ public final class Term {
 	 * line ends with … if there was more.
 	 */
 	public static List<String> wrap(String s, int maxWidth, int maxLines) {
+		// Menus wrap the same description every frame; measuring every
+		// prefix each time adds up, so the result is kept.
+		String key = maxWidth + "/" + maxLines + "/" + s;
+		List<String> done = wrapped.get(key);
+		if (done != null && cachedMonospace == Theme.monospace()) {
+			return done;
+		}
+		done = List.copyOf(wrapUncached(s, maxWidth, maxLines));
+		if (wrapped.size() > 256) {
+			wrapped.clear();
+		}
+		wrapped.put(key, done);
+		return done;
+	}
+
+	private static List<String> wrapUncached(String s, int maxWidth, int maxLines) {
 		List<String> out = new ArrayList<>();
 		String line = "";
 		String[] words = s.split(" ");

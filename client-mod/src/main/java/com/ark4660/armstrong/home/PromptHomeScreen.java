@@ -29,10 +29,28 @@ public final class PromptHomeScreen extends HomeScreen {
 
 	private String query = "";
 
+	/** The featured commands and the bottom shortcuts, looked up once per init. */
+	private List<Action> featured = List.of(), shortcuts = List.of();
+
 	@Override
 	protected void init() {
 		super.init();
+		featured = named(FEATURED);
+		shortcuts = named(SHORTCUTS);
 		startTyping(); // the prompt always takes typing
+	}
+
+	private List<Action> named(List<String> names) {
+		List<Action> out = new ArrayList<>();
+		for (String name : names) {
+			for (Action a : actions) {
+				if (a.name().equals(name)) {
+					out.add(a);
+					break;
+				}
+			}
+		}
+		return out;
 	}
 
 	@Override
@@ -45,9 +63,7 @@ public final class PromptHomeScreen extends HomeScreen {
 		String q = query.trim().toLowerCase(Locale.ROOT);
 		List<Action> out = new ArrayList<>();
 		if (q.isEmpty()) {
-			for (String name : FEATURED) {
-				actions.stream().filter(a -> a.name().equals(name)).findFirst().ifPresent(out::add);
-			}
+			out.addAll(featured);
 		} else {
 			for (Action a : actions) {
 				if (a.matches(q)) {
@@ -166,13 +182,11 @@ public final class PromptHomeScreen extends HomeScreen {
 		// One-word shortcuts.
 		Term.Line row = new Term.Line();
 		List<int[]> spans = new ArrayList<>();
-		for (String name : SHORTCUTS) {
-			actions.stream().filter(a -> a.name().equals(name)).findFirst().ifPresent(a -> {
-				String word = name.equals("armstrong") ? "modules" : name;
-				int start = row.width();
-				row.add(word.substring(0, 1), Theme.AMBER).add(word.substring(1) + "    ", Theme.MUTED);
-				spans.add(new int[]{start, Term.width(word), actions.indexOf(a)});
-			});
+		for (Action a : shortcuts) {
+			String word = a.name().equals("armstrong") ? "modules" : a.name();
+			int start = row.width();
+			row.add(word.substring(0, 1), Theme.AMBER).add(word.substring(1) + "    ", Theme.MUTED);
+			spans.add(new int[]{start, Term.width(word), actions.indexOf(a)});
 		}
 		int rx = (width - row.width()) / 2;
 		row.draw(g, rx, y);

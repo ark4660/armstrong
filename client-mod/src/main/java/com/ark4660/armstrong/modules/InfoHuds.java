@@ -54,6 +54,11 @@ public final class InfoHuds {
 		}
 
 		@Override
+		protected boolean live() {
+			return running; // hundredths of a second
+		}
+
+		@Override
 		protected List<Term.Line> lines(Minecraft mc) {
 			long ns = elapsed + (running ? System.nanoTime() - started : 0);
 			long cs = ns / 10_000_000;

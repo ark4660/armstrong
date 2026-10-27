@@ -21,6 +21,9 @@ public final class Theme {
 	public static final int ON_ACCENT = 0xFF07100A; // text on an accent fill
 
 	private static Interface settings;
+	// The accent is read many times a frame: remember the last choice's color.
+	private static String accentName;
+	private static int accentColor = 0xFF5EF38C;
 
 	private Theme() {}
 
@@ -32,11 +35,16 @@ public final class Theme {
 		if (settings == null) {
 			return 0xFF5EF38C;
 		}
-		return switch (settings.accent()) {
-			case "Amber" -> AMBER;
-			case "Cyan" -> CYAN;
-			default -> 0xFF5EF38C;
-		};
+		String name = settings.accent();
+		if (!name.equals(accentName)) {
+			accentName = name;
+			accentColor = switch (name) {
+				case "Amber" -> AMBER;
+				case "Cyan" -> CYAN;
+				default -> 0xFF5EF38C;
+			};
+		}
+		return accentColor;
 	}
 
 	/** The accent at low opacity, for selected rows. */
