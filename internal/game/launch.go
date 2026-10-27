@@ -46,6 +46,9 @@ type LaunchOptions struct {
 	JVMArgs  []string // extra user JVM arguments
 	AddMods  []string // mod jars loaded from outside the mods folder (the client layer)
 	Server   string   // host[:port] to join on start; empty for none
+	GameArgs []string // extra game arguments, after the version's own
+	Env      []string // extra environment variables (KEY=value)
+	Wrapper  []string // a command to run java through, like gamemoderun
 }
 
 // Game is a running game process. Lines carries its combined stdout/stderr
@@ -121,8 +124,16 @@ func Command(inst *Installation, opt LaunchOptions) (*exec.Cmd, error) {
 		args = append(args, "--server", host, "--port", port)
 	}
 
+	args = append(args, opt.GameArgs...)
+
 	cmd := exec.Command(inst.Java, args...)
+	if len(opt.Wrapper) > 0 {
+		cmd = exec.Command(opt.Wrapper[0], append(append(opt.Wrapper[1:len(opt.Wrapper):len(opt.Wrapper)], inst.Java), args...)...)
+	}
 	cmd.Dir = opt.GameDir
+	if len(opt.Env) > 0 {
+		cmd.Env = append(os.Environ(), opt.Env...)
+	}
 	return cmd, nil
 }
 

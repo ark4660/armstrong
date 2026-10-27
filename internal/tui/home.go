@@ -12,6 +12,7 @@ import (
 	"github.com/ark4660/armstrong/internal/app"
 	"github.com/ark4660/armstrong/internal/auth"
 	"github.com/ark4660/armstrong/internal/client"
+	"github.com/ark4660/armstrong/internal/game"
 	"github.com/ark4660/armstrong/internal/instance"
 )
 
@@ -52,6 +53,7 @@ func (m model) homeView() string {
 			row("Client", m.clientLabel(inst)),
 			row("Account", account),
 			row("Memory", s.value.Render(fmt.Sprintf("%d MB", inst.MemoryMB))),
+			row("JVM", s.value.Render(inst.Preset())+s.muted.Render("  "+presetNote[inst.Preset()])),
 			row("Folder", s.muted.Render(tildePath(inst.GameDir()))),
 			"",
 			lipgloss.NewStyle().MarginLeft(2).Render(m.playButton(inst.ID)),
@@ -70,6 +72,13 @@ func (m model) homeView() string {
 		lines = append(lines, "", "  "+style.Width(max(m.width-4, 20)).Render(m.notice))
 	}
 	return lipgloss.JoinVertical(lipgloss.Left, lines...)
+}
+
+// presetNote explains each JVM preset in a few words on the home screen.
+var presetNote = map[string]string{
+	game.PresetDefault: "G1, heap reserved up front",
+	game.PresetZGC:     "no GC pauses, more memory",
+	game.PresetNone:    "Java's defaults",
 }
 
 func (m model) playButton(id string) string {

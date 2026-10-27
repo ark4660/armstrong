@@ -44,6 +44,8 @@ type playRequest struct {
 	spec     game.Spec
 	gameDir  string
 	memoryMB int
+	preset   string   // JVM preset
+	jvmArgs  []string // the player's own JVM arguments
 	account  auth.Account
 	accounts *auth.Accounts
 	addons   []string
@@ -107,11 +109,18 @@ func play(ctx context.Context, send func(tea.Msg), paths app.Paths, req playRequ
 
 	send(stepMsg{"Starting"})
 	gameDir := req.gameDir
+	info := game.ReadClientInfo(paths, inst.Minecraft)
+	if err := game.SeedOptions(gameDir, info); err != nil {
+		send(failedMsg{err})
+		return
+	}
 	opts := game.LaunchOptions{
 		Paths:    paths,
 		GameDir:  gameDir,
 		Player:   game.PlayerFromSession(sess),
 		MemoryMB: req.memoryMB,
+		JVMArgs:  game.TunedJVMArgs(inst.Java, req.preset, req.memoryMB, req.jvmArgs),
+		GameArgs: game.BackendArgs(info, layer != nil && layer.Has(client.ShadersModID)),
 	}
 	if layer != nil {
 		opts.AddMods = layer.Files

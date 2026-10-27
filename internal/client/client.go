@@ -57,6 +57,10 @@ const FormatVersion = 1
 // ModID is Armstrong's own client mod.
 const ModID = "armstrong"
 
+// ShadersModID is the shader add-on (Iris). Shader packs need OpenGL, so a
+// layer with it keeps the game off the Vulkan backend (game.BackendArgs).
+const ShadersModID = "iris"
+
 // IsReadyLine reports whether a log line is the client mod's
 // "Armstrong <version> ready with N modules" (the boot test waits for it).
 func IsReadyLine(line string) bool {
@@ -415,6 +419,19 @@ func addDevJars(layer *Layer, dir string) error {
 		layer.Files = append(layer.Files, path)
 	}
 	return nil
+}
+
+// Without returns a copy of the layer without the given mod ids (for
+// benchmarks that compare the client with and without a mod).
+func (l *Layer) Without(ids []string) *Layer {
+	out := &Layer{Manifest: l.Manifest}
+	for i, m := range l.Mods {
+		if !slices.Contains(ids, m.ID) {
+			out.Mods = append(out.Mods, m)
+			out.Files = append(out.Files, l.Files[i])
+		}
+	}
+	return out
 }
 
 // Has reports whether the layer includes a mod id.

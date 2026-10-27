@@ -1,5 +1,7 @@
 package com.ark4660.armstrong;
 
+import com.ark4660.armstrong.bench.Bench;
+import com.ark4660.armstrong.bench.BenchRecorder;
 import com.ark4660.armstrong.compat.Mc;
 
 import org.slf4j.Logger;
@@ -174,6 +176,9 @@ public final class ArmstrongClient implements ClientModInitializer {
 				com.ark4660.armstrong.ui.Term.clearCache();
 			}
 		});
+		if (BenchRecorder.requested()) {
+			Bench.start();
+		}
 		Cosmetics.start(FabricLoader.getInstance().getConfigDir());
 		Recent.init(FabricLoader.getInstance().getConfigDir().resolve("armstrong-recent.json"));
 		// Remember the world or server for the home screen's continue entries.
@@ -198,10 +203,17 @@ public final class ArmstrongClient implements ClientModInitializer {
 				}
 			}
 			modules.tick(mc);
+			if (Bench.enabled()) {
+				Bench.tick(mc);
+			}
 		});
 		//? if >=26 {
-		HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, id("modules"),
-				(g, delta) -> modules.renderHud(g, Minecraft.getInstance()));
+		HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, id("modules"), (g, delta) -> {
+			if (Bench.enabled()) {
+				Bench.frame();
+			}
+			modules.renderHud(g, Minecraft.getInstance());
+		});
 		HudElementRegistry.replaceElement(VanillaHudElements.MOB_EFFECTS,
 				vanilla -> (g, delta) -> HudHooks.effects(g, () -> vanilla.extractRenderState(g, delta)));
 		HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR,
@@ -216,6 +228,9 @@ public final class ArmstrongClient implements ClientModInitializer {
 		/*// The vanilla elements go through HudHooks from HudMixin and BossBarMixin.
 		// The HUD is drawn in depth layers (200 apart): draw in front of them all.
 		HudRenderCallback.EVENT.register((g, delta) -> {
+			if (Bench.enabled()) {
+				Bench.frame();
+			}
 			g.pose().pushPose();
 			g.pose().translate(0f, 0f, 4000f);
 			modules.renderHud(g, Minecraft.getInstance());

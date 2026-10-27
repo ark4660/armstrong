@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -506,6 +507,15 @@ func (m model) handleHomeKey(k string) (tea.Model, tea.Cmd) {
 				return updateDoneMsg{version: r.Version, err: update.ApplyLauncher(ctx, download.New(app.UserAgent()), r)}
 			}, m.spin.Tick)
 		}
+	case "j":
+		if inst != nil {
+			i := slices.Index(game.Presets, inst.Preset())
+			inst.JVMPreset = game.Presets[(i+1)%len(game.Presets)]
+			if inst.JVMPreset == game.PresetDefault {
+				inst.JVMPreset = ""
+			}
+			m.saveInstance(inst)
+		}
 	case "+", "=":
 		if inst != nil {
 			inst.MemoryMB = min(inst.MemoryMB+memoryStep, memoryMax)
@@ -584,7 +594,8 @@ func (m model) startPlay() (tea.Model, tea.Cmd) {
 	}
 	inst.LastPlayed = time.Now()
 	m.saveInstance(inst)
-	req := playRequest{spec: inst.Spec(), gameDir: inst.GameDir(), memoryMB: inst.MemoryMB, account: acc, accounts: m.accounts, addons: inst.Addons}
+	req := playRequest{spec: inst.Spec(), gameDir: inst.GameDir(), memoryMB: inst.MemoryMB, preset: inst.Preset(), jvmArgs: inst.JVMArgs,
+		account: acc, accounts: m.accounts, addons: inst.Addons}
 
 	ctx, cancel := context.WithCancel(context.Background())
 	m.state, m.cancel, m.notice, m.step = stateInstalling, cancel, "", "Preparing"
@@ -717,7 +728,7 @@ func (m model) footerView() string {
 	case m.screen == screenInstances:
 		keys = []keyHelp{{"enter", "select"}, {"n", "new"}, {"r", "rename"}, {"c", "copy"}, {"d", "delete"}}
 	default:
-		keys = []keyHelp{{"enter", "play"}, {"i", "instances"}, {"m", "mods"}, {"a", "account"}, {"+/-", "memory"}}
+		keys = []keyHelp{{"enter", "play"}, {"i", "instances"}, {"m", "mods"}, {"a", "account"}, {"+/-", "memory"}, {"j", "jvm"}}
 	}
 	if m.game != nil && m.screen != screenMods {
 		keys = append(keys, keyHelp{"s", "stop game"})

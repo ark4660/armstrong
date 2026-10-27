@@ -5,6 +5,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.ark4660.armstrong.compat.Gfx;
+import com.ark4660.armstrong.bench.Bench;
+import com.ark4660.armstrong.bench.BenchRecorder;
 import com.ark4660.armstrong.compat.Mc;
 import com.ark4660.armstrong.gui.ArmstrongScreen;
 import com.ark4660.armstrong.home.Recent;
@@ -130,6 +132,9 @@ public final class ArmstrongClient implements ClientModInitializer {
 		ui = modules.register(new Interface()); // last: it's settings, not a feature
 		Theme.bind(ui);
 		modules.load();
+		if (BenchRecorder.requested()) {
+			Bench.start();
+		}
 		Cosmetics.start(FabricLoader.getInstance().getConfigDir());
 		Recent.init(FabricLoader.getInstance().getConfigDir().resolve("armstrong-recent.json"));
 		// Remember the world or server for the home screen's continue entries.
@@ -148,8 +153,14 @@ public final class ArmstrongClient implements ClientModInitializer {
 				}
 			}
 			modules.tick(mc);
+			if (Bench.enabled()) {
+				Bench.tick(mc);
+			}
 		});
 		HudRenderCallback.EVENT.register((mc, delta) -> {
+			if (Bench.enabled()) {
+				Bench.frame();
+			}
 			if (!mc.options.hudHidden) {
 				Mc.partialTick = delta;
 				modules.renderHud(new Gfx(), mc);

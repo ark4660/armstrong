@@ -29,6 +29,7 @@ sourceSets {
 		java {
 			srcDir '../src/main/java'
 			// Only the shared classes that don't touch Minecraft.
+			include 'com/ark4660/armstrong/bench/BenchRecorder.java'
 			include 'com/ark4660/armstrong/input/ClickCounter.java'
 			include 'com/ark4660/armstrong/module/Category.java'
 			include 'com/ark4660/armstrong/module/Indicator.java'

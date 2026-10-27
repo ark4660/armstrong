@@ -53,6 +53,15 @@ public final class Mc {
 		*///?}
 	}
 
+	/** Whether a loading overlay (resource reload) is showing. */
+	public static boolean loading() {
+		//? if >=26 {
+		return Minecraft.getInstance().gui.overlay() != null;
+		//?} else {
+		/*return Minecraft.getInstance().getOverlay() != null;
+		*///?}
+	}
+
 	/** Opens a screen (null closes it). */
 	public static void open(Screen screen) {
 		//? if >=26 {

@@ -41,14 +41,23 @@ type Instance struct {
 	LoaderVersion string    `json:"loaderVersion,omitempty"` // empty: latest stable
 	MemoryMB      int       `json:"memoryMB"`
 	JVMArgs       []string  `json:"jvmArgs,omitempty"`
-	Addons        []string  `json:"addons,omitempty"` // optional client mods the player enabled
+	JVMPreset     string    `json:"jvmPreset,omitempty"` // empty: game.PresetDefault
+	Addons        []string  `json:"addons,omitempty"`    // optional client mods the player enabled
 	Created       time.Time `json:"created"`
 	LastPlayed    time.Time `json:"lastPlayed,omitzero"`
 
 	dir string
 }
 
-func (i *Instance) Dir() string     { return i.dir }
+func (i *Instance) Dir() string { return i.dir }
+
+// Preset is the instance's JVM preset (see game.Presets).
+func (i *Instance) Preset() string {
+	if i.JVMPreset == "" {
+		return game.PresetDefault
+	}
+	return i.JVMPreset
+}
 func (i *Instance) GameDir() string { return filepath.Join(i.dir, "minecraft") }
 
 // Spec is what has to be installed to play this instance.

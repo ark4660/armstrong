@@ -56,4 +56,25 @@ repository secret and never goes in the repository).
 - Launcher: Go 1.27+ — `go build ./cmd/armstrong`
 - Client mod: `armstrong client build` (uses the Java 25 runtime the launcher installs)
 
+## Benchmarking
+
+`armstrong bench` measures frame times in a fresh world with a fixed seed and
+fixed settings, so changes can be compared run for run. The client mod creates
+the world, holds the camera on a scripted path and writes a JSON result per run
+(average fps, 1% and 0.1% lows, p99, stutters, GC pauses, render-thread
+allocation per frame, heap, time to the world).
+
+```
+armstrong bench -label before                       # static, fly and entities scenes on 26.3
+armstrong bench -label zgc -preset zgc -runs 2      # another configuration
+armstrong bench compare ~/.local/share/armstrong/bench/results/{before,zgc}
+```
+
+Scenes: `static`, `fly` (new chunks), `spin`, `entities` (144 villagers in view),
+`menu`. Other flags: `-mc`, `-without sodium`, `-only lithium`, `-addons iris`,
+`-no-modules`, `-jvm ARG`, `-env K=V`, `-opt key:value` (options.txt), `-wrapper`.
+The game window opens for every run; keep it focused (Dynamic FPS is switched off,
+and runs with an unfocused window are flagged). Only compare runs from the same
+machine and Minecraft version.
+
 Minecraft is a trademark of Mojang. Armstrong is not affiliated with Mojang or Microsoft.

@@ -9,6 +9,7 @@
 //	armstrong launch    -instance ID -offline NAME [-mem MB] [-server host:port]
 //	armstrong boot-test [-instance ID | -mc 26.3 -loader fabric] [-timeout 3m]
 //	armstrong client resolve [-mc 26.3] [-o FILE]
+//	armstrong bench     [-mc 26.3] [-scenes static,fly,entities] [-label NAME]
 package main
 
 import (
@@ -94,6 +95,8 @@ func main() {
 			err = cmdClient(ctx, paths, os.Args[2:])
 		case "mods":
 			err = cmdMods(ctx, paths, os.Args[2:])
+		case "bench":
+			err = cmdBench(ctx, paths, os.Args[2:])
 		case "help", "-h", "--help":
 			usage()
 			return
@@ -123,6 +126,8 @@ Usage:
   %[1]s client resolve [-mc VERSION] [-o FILE]   build a client manifest from Modrinth
   %[1]s client build [-src DIR]                  build the client mod and add it to the client layer
   %[1]s mods list|search|install|remove|updates -instance ID [args]   manage an instance's mods
+  %[1]s bench     [-mc VERSION] [-scenes static,fly,...] [-runs N] [-label NAME] [-preset P] [-jvm ARG] ...   measure frame times
+  %[1]s bench compare RESULTS...                 compare benchmark results
   %[1]s version
   %[1]s update [-check]                          update the launcher and the client
   %[1]s release keygen|manifest|index            build a release (used by the release workflow)
@@ -300,8 +305,8 @@ func cmdLaunch(ctx context.Context, paths app.Paths, accounts *auth.Accounts, ar
 
 	// A boot test without -instance runs the requested spec in a scratch game
 	// dir, so it never touches a real instance's mods or saves.
-	spec, gameDir, memory := sf.Spec, "", instance.DefaultMemoryMB
-	var addons []string
+	spec, gameDir, memory, preset := sf.Spec, "", instance.DefaultMemoryMB, game.PresetDefault
+	var addons, jvmArgs []string
 	if *addonsFlag != "" {
 		addons = strings.Split(*addonsFlag, ",")
 	}
@@ -311,6 +316,7 @@ func cmdLaunch(ctx context.Context, paths app.Paths, accounts *auth.Accounts, ar
 			return fmt.Errorf("instance %q: %w", *instID, err)
 		}
 		spec, gameDir, memory, addons = inst.Spec(), inst.GameDir(), inst.MemoryMB, inst.Addons
+		preset, jvmArgs = inst.Preset(), inst.JVMArgs
 	} else if bootTest {
 		dir := spec.Loader + "-" + spec.Minecraft
 		if spec.Loader == game.LoaderFabric && !*noClient {
@@ -350,15 +356,21 @@ func cmdLaunch(ctx context.Context, paths app.Paths, accounts *auth.Accounts, ar
 	if err != nil {
 		return err
 	}
+	info := game.ReadClientInfo(paths, inst.Minecraft)
 	opts := game.LaunchOptions{
 		Paths:    paths,
 		GameDir:  gameDir,
 		Player:   game.PlayerFromSession(sess),
 		MemoryMB: memory,
+		JVMArgs:  game.TunedJVMArgs(inst.Java, preset, memory, jvmArgs),
+		GameArgs: game.BackendArgs(info, layer != nil && layer.Has(client.ShadersModID)),
 		Server:   *server,
 	}
 	if layer != nil {
 		opts.AddMods = layer.Files
+	}
+	if err := game.SeedOptions(gameDir, info); err != nil {
+		return err
 	}
 	cmd, err := game.Command(inst, opts)
 	if err != nil {
