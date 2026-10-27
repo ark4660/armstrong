@@ -7,7 +7,7 @@ public final class Pose {
 	private Pose() {}
 
 	public static void push(GuiGraphicsExtractor g) {
-		//? if >=26 {
+		//? if >=1.21.11 {
 		g.pose().pushMatrix();
 		//?} else {
 		/*g.pose().pushPose();
@@ -15,7 +15,7 @@ public final class Pose {
 	}
 
 	public static void pop(GuiGraphicsExtractor g) {
-		//? if >=26 {
+		//? if >=1.21.11 {
 		g.pose().popMatrix();
 		//?} else {
 		/*g.pose().popPose();
@@ -23,7 +23,7 @@ public final class Pose {
 	}
 
 	public static void translate(GuiGraphicsExtractor g, float x, float y) {
-		//? if >=26 {
+		//? if >=1.21.11 {
 		g.pose().translate(x, y);
 		//?} else {
 		/*g.pose().translate(x, y, 0f);
@@ -31,7 +31,7 @@ public final class Pose {
 	}
 
 	public static void scale(GuiGraphicsExtractor g, float s) {
-		//? if >=26 {
+		//? if >=1.21.11 {
 		g.pose().scale(s, s);
 		//?} else {
 		/*g.pose().scale(s, s, 1f);

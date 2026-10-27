@@ -11,7 +11,7 @@ import net.minecraft.client.gui.Gui;
  */
 @Mixin(Gui.class)
 public class HudMixin {
-	//? if <26 {
+	//? if <1.21.11 {
 	/*@com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod(method = "renderEffects")
 	private void armstrong$effects(net.minecraft.client.gui.GuiGraphicsExtractor g, net.minecraft.client.DeltaTracker delta,
 			com.llamalad7.mixinextras.injector.wrapoperation.Operation<Void> vanilla) {

@@ -31,7 +31,7 @@ public final class Bench {
 	private static final int CROWD = 12; // a CROWD x CROWD grid of mobs
 	private static final long SEED = Long.getLong("armstrong.bench.seed", 4660);
 	/** Nothing changes but the scene: no day cycle, weather, mob spawns or chat feedback. */
-	//? if >=26 {
+	//? if >=1.21.11 {
 	private static final String[] WORLD_COMMANDS = {"gamerule send_command_feedback false", "gamerule log_admin_commands false", "gamerule advance_time false",
 			"gamerule advance_weather false", "gamerule spawn_mobs false", "time set 6000", "weather clear"};
 	//?} else {
@@ -110,7 +110,12 @@ public final class Bench {
 				net.minecraft.world.level.GameType.CREATIVE,
 				new net.minecraft.world.level.LevelSettings.DifficultySettings(net.minecraft.world.Difficulty.PEACEFUL, false, false),
 				true, net.minecraft.world.level.WorldDataConfiguration.DEFAULT);
-		//?} else {
+		//?} elif >=1.21.11 {
+		/*net.minecraft.world.level.LevelSettings settings = new net.minecraft.world.level.LevelSettings(name,
+				net.minecraft.world.level.GameType.CREATIVE, false, net.minecraft.world.Difficulty.PEACEFUL, true,
+				new net.minecraft.world.level.gamerules.GameRules(net.minecraft.world.flag.FeatureFlags.DEFAULT_FLAGS),
+				net.minecraft.world.level.WorldDataConfiguration.DEFAULT);
+		*///?} else {
 		/*net.minecraft.world.level.LevelSettings settings = new net.minecraft.world.level.LevelSettings(name,
 				net.minecraft.world.level.GameType.CREATIVE, false, net.minecraft.world.Difficulty.PEACEFUL, true,
 				new net.minecraft.world.level.GameRules(), net.minecraft.world.level.WorldDataConfiguration.DEFAULT);
@@ -122,7 +127,7 @@ public final class Bench {
 
 	private static void setUp(Minecraft mc, LocalPlayer p) {
 		commands.addAll(java.util.List.of(WORLD_COMMANDS));
-		//? if >=26 {
+		//? if >=1.21.11 {
 		p.snapTo(START_X, START_Y, START_Z, 0f, PITCH);
 		//?} else {
 		/*p.moveTo(START_X, START_Y, START_Z, 0f, PITCH);
@@ -162,7 +167,12 @@ public final class Bench {
 		game.put("renderer", gpu.name());
 		game.put("backend", gpu.backendName());
 		game.put("driver", gpu.driverInfo());
-		//?} else {
+		//?} elif >=1.21.11 {
+		/*com.mojang.blaze3d.systems.GpuDevice gpu = com.mojang.blaze3d.systems.RenderSystem.getDevice();
+		game.put("renderer", gpu.getRenderer());
+		game.put("backend", gpu.getBackendName());
+		game.put("driver", gpu.getVersion());
+		*///?} else {
 		/*game.put("renderer", com.mojang.blaze3d.platform.GlUtil.getRenderer());
 		game.put("backend", "OpenGL");
 		game.put("driver", com.mojang.blaze3d.platform.GlUtil.getOpenGLVersion());

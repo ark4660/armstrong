@@ -3,17 +3,17 @@ package com.ark4660.armstrong.compat;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-//? if >=26 {
+//? if >=1.21.11 {
 import net.minecraft.client.input.CharacterEvent;
 import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 //?}
 
 /**
- * A screen with version-neutral input and drawing hooks. Minecraft 26.x
- * passes input as event objects and draws through extract* methods; older
- * versions pass key codes and chars and draw through render*. Armstrong's
- * screens override the hooks below instead of either.
+ * A screen with version-neutral input and drawing hooks. Minecraft 1.21.11
+ * and later pass input as event objects (before: key codes and chars), and
+ * 26.x draws through extract* methods (before: render*). Armstrong's screens
+ * override the hooks below instead of any of them.
  */
 public abstract class CompatScreen extends Screen {
 	protected CompatScreen(Component title) {
@@ -74,6 +74,38 @@ public abstract class CompatScreen extends Screen {
 	}
 
 	@Override
+	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+		drawBackground(g, mouseX, mouseY, delta);
+	}
+
+	@Override
+	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+		super.extractRenderState(g, mouseX, mouseY, delta);
+		draw(g, mouseX, mouseY, delta);
+	}
+	//?} else {
+	/*protected void vanillaBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+		super.renderBackground(g, mouseX, mouseY, delta);
+	}
+
+	protected void panorama(GuiGraphicsExtractor g, float delta) {
+		renderPanorama(g, delta);
+	}
+
+	@Override
+	public void renderBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+		drawBackground(g, mouseX, mouseY, delta);
+	}
+
+	@Override
+	public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
+		super.render(g, mouseX, mouseY, delta);
+		draw(g, mouseX, mouseY, delta);
+	}
+	*///?}
+
+	//? if >=1.21.11 {
+	@Override
 	public boolean keyPressed(KeyEvent event) {
 		return onKey(event.key(), event.modifiers()) || super.keyPressed(event);
 	}
@@ -97,27 +129,8 @@ public abstract class CompatScreen extends Screen {
 	public boolean mouseReleased(MouseButtonEvent event) {
 		return onRelease(event.x(), event.y(), event.button()) || super.mouseReleased(event);
 	}
-
-	@Override
-	public void extractBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-		drawBackground(g, mouseX, mouseY, delta);
-	}
-
-	@Override
-	public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-		super.extractRenderState(g, mouseX, mouseY, delta);
-		draw(g, mouseX, mouseY, delta);
-	}
 	//?} else {
-	/*protected void vanillaBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-		super.renderBackground(g, mouseX, mouseY, delta);
-	}
-
-	protected void panorama(GuiGraphicsExtractor g, float delta) {
-		renderPanorama(g, delta);
-	}
-
-	@Override
+	/*@Override
 	public boolean keyPressed(int key, int scanCode, int modifiers) {
 		return onKey(key, modifiers) || super.keyPressed(key, scanCode, modifiers);
 	}
@@ -140,17 +153,6 @@ public abstract class CompatScreen extends Screen {
 	@Override
 	public boolean mouseReleased(double x, double y, int button) {
 		return onRelease(x, y, button) || super.mouseReleased(x, y, button);
-	}
-
-	@Override
-	public void renderBackground(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-		drawBackground(g, mouseX, mouseY, delta);
-	}
-
-	@Override
-	public void render(GuiGraphicsExtractor g, int mouseX, int mouseY, float delta) {
-		super.render(g, mouseX, mouseY, delta);
-		draw(g, mouseX, mouseY, delta);
 	}
 	*///?}
 }

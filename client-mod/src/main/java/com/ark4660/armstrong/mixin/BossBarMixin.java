@@ -7,7 +7,7 @@ import net.minecraft.client.gui.components.BossHealthOverlay;
 /** The boss bar through HudHooks before 26.x (see HudMixin); empty in 26.x. */
 @Mixin(BossHealthOverlay.class)
 public class BossBarMixin {
-	//? if <26 {
+	//? if <1.21.11 {
 	/*@com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod(method = "render")
 	private void armstrong$bossBar(net.minecraft.client.gui.GuiGraphicsExtractor g,
 			com.llamalad7.mixinextras.injector.wrapoperation.Operation<Void> vanilla) {

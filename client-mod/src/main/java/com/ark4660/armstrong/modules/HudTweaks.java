@@ -59,7 +59,7 @@ public final class HudTweaks extends Module {
 			case RIGHT_MIDDLE, CENTER -> g.guiHeight() / 2f;
 			case TOP_CENTER -> 0f;
 		};
-		//? if >=26 {
+		//? if >=1.21.11 {
 		g.pose().pushMatrix();
 		g.pose().translate(ax, ay);
 		g.pose().scale(s, s);

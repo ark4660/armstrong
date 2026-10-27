@@ -1,0 +1,302 @@
+{
+  "formatVersion": 1,
+  "client": "armstrong",
+  "version": "0.1.0-dev",
+  "minecraft": "1.21.11",
+  "fabricLoader": "0.20.1",
+  "mods": [
+    {
+      "id": "fabric-api",
+      "provides": [
+        "fabric"
+      ],
+      "name": "Fabric API",
+      "version": "0.141.6+1.21.11",
+      "project": "P7dR8mSH",
+      "slug": "fabric-api",
+      "versionId": "6qAuTtLR",
+      "file": "fabric-api-0.141.6+1.21.11.jar",
+      "url": "https://cdn.modrinth.com/data/P7dR8mSH/versions/6qAuTtLR/fabric-api-0.141.6%2B1.21.11.jar",
+      "sha1": "c98467cbbaf4d197377266795ae015f4130d65b6",
+      "sha512": "852d3682c4f353fd0ca86546af8578513e8bcf628377fa9d49c556bc59c5024c69ab56c92fc6dfba11fed19e4316a3f5636e7e07fd3d96f7043b531aef59b637",
+      "size": 2426039
+    },
+    {
+      "id": "sodium",
+      "provides": [
+        "indium"
+      ],
+      "name": "Sodium",
+      "version": "0.8.14+mc1.21.11",
+      "project": "AANobbMI",
+      "slug": "sodium",
+      "versionId": "rkdTcxoT",
+      "file": "sodium-fabric-0.8.14+mc1.21.11.jar",
+      "url": "https://cdn.modrinth.com/data/AANobbMI/versions/rkdTcxoT/sodium-fabric-0.8.14%2Bmc1.21.11.jar",
+      "sha1": "4a8733fe544168068d12fa94b2ab03e6c0c7bf91",
+      "sha512": "04c43f9e8534b87a52c42ffd51b0e344d4ef92dc9cc52da33d13af6a18bf74b05380d2027f1e0db982698d0aff274c42741c1e21b313b0cd75ed3af005fc98d9",
+      "size": 1909150
+    },
+    {
+      "id": "lithium",
+      "name": "Lithium",
+      "version": "0.21.4+mc1.21.11",
+      "project": "gvQqBUqZ",
+      "slug": "lithium",
+      "versionId": "Ow7wA0kG",
+      "file": "lithium-fabric-0.21.4+mc1.21.11.jar",
+      "url": "https://cdn.modrinth.com/data/gvQqBUqZ/versions/Ow7wA0kG/lithium-fabric-0.21.4%2Bmc1.21.11.jar",
+      "sha1": "203bdcb26e97b3217b045e1182651a7d7b6462ec",
+      "sha512": "f14a5c3d2fad786347ca25083f902139694f618b7c103947f2fd067a7c5ee88a63e1ef8926f7d693ea79ed7d00f57317bae77ef9c2d630bf5ed01ac97a752b94",
+      "size": 900462
+    },
+    {
+      "id": "ferritecore",
+      "name": "FerriteCore",
+      "version": "8.2.0",
+      "project": "uXXizFIs",
+      "slug": "ferrite-core",
+      "versionId": "Ii0gP3D8",
+      "file": "ferritecore-8.2.0-fabric.jar",
+      "url": "https://cdn.modrinth.com/data/uXXizFIs/versions/Ii0gP3D8/ferritecore-8.2.0-fabric.jar",
+      "sha1": "c2e2f5e008f5bc9f401dfad8ca94909917006b65",
+      "sha512": "3210926a82eb32efd9bcebabe2f6c053daf5c4337eebc6d5bacba96d283510afbde646e7e195751de795ec70a2ea44fef77cb54bf22c8e57bb832d6217418869",
+      "size": 80138
+    },
+    {
+      "id": "immediatelyfast",
+      "name": "ImmediatelyFast",
+      "version": "1.14.3+1.21.11",
+      "project": "5ZwdcRci",
+      "slug": "immediatelyfast",
+      "versionId": "4EwhsTu7",
+      "file": "ImmediatelyFast-Fabric-1.14.3+1.21.11.jar",
+      "url": "https://cdn.modrinth.com/data/5ZwdcRci/versions/4EwhsTu7/ImmediatelyFast-Fabric-1.14.3%2B1.21.11.jar",
+      "sha1": "43e451464f979bdf9ff4ac288b358a2f91b79ed8",
+      "sha512": "2564cb28259352c3aa5759aceca62667de08a7860a40910dad40a043af851a074b2d75cef50b9fa6f1971febb3a5ecebe4067cbd4b60e63ef711b85f4bc21407",
+      "size": 302709
+    },
+    {
+      "id": "entityculling",
+      "name": "Entity Culling",
+      "version": "1.11.3",
+      "requires": [
+        "fabric-api"
+      ],
+      "project": "NNAgCjsB",
+      "slug": "entityculling",
+      "versionId": "CTabrwB1",
+      "file": "entityculling-fabric-1.11.3-mc1.21.11.jar",
+      "url": "https://cdn.modrinth.com/data/NNAgCjsB/versions/CTabrwB1/entityculling-fabric-1.11.3-mc1.21.11.jar",
+      "sha1": "ce2e1cf7e343a625d184c80ccea582d468686a2e",
+      "sha512": "4b5516bf8718d74db0e0368ad2fd2f5ce3e986c3abbf65426418ce3ec162651d29579b9be8aa0d34b88f47e310f6b7bab56bde7ff1223c35998bff0bcbed58c5",
+      "size": 1529094
+    },
+    {
+      "id": "dynamic_fps",
+      "name": "Dynamic FPS",
+      "version": "3.11.6",
+      "requires": [
+        "fabric-api"
+      ],
+      "project": "LQ3K71Q1",
+      "slug": "dynamic-fps",
+      "versionId": "Fab7e5Th",
+      "file": "dynamic-fps-3.11.6+minecraft-1.21.11-fabric.jar",
+      "url": "https://cdn.modrinth.com/data/LQ3K71Q1/versions/Fab7e5Th/dynamic-fps-3.11.6%2Bminecraft-1.21.11-fabric.jar",
+      "sha1": "2e5ab45e69b43812491cfa34f8f7a4ce7623c233",
+      "sha512": "c45652252e2176cb8e2c44dfd9032c617135a100dcf161b9e6e6717803c14d1359d0f940fa10dc1aa6ad80669983f4b9c5636c0c2953d3314e06f893f0cdc736",
+      "size": 219961
+    },
+    {
+      "id": "modmenu",
+      "name": "Mod Menu",
+      "version": "17.0.1",
+      "requires": [
+        "fabric-api",
+        "placeholder-api"
+      ],
+      "project": "mOgUt4GM",
+      "slug": "modmenu",
+      "versionId": "cLkYaVuL",
+      "file": "modmenu-17.0.1.jar",
+      "url": "https://cdn.modrinth.com/data/mOgUt4GM/versions/cLkYaVuL/modmenu-17.0.1.jar",
+      "sha1": "d5612d70bda58e0179b177ca9990e57471e67d19",
+      "sha512": "cb68cc39c8da66d05a1d2054a0e7b62144881e0cdb5fd681bc4f337b1313fafac394246f4e0aa0c4b6343db9e9750250a00c1bb72689b762da685ce1ccfee51f",
+      "size": 960882
+    },
+    {
+      "id": "placeholder-api",
+      "name": "Text Placeholder API",
+      "version": "2.8.2+1.21.10",
+      "project": "eXts2L7r",
+      "slug": "placeholder-api",
+      "versionId": "qxjzQ9xY",
+      "file": "placeholder-api-2.8.2+1.21.10.jar",
+      "url": "https://cdn.modrinth.com/data/eXts2L7r/versions/qxjzQ9xY/placeholder-api-2.8.2%2B1.21.10.jar",
+      "sha1": "bbdc920ecff993148cd6e81a208536132245ce40",
+      "sha512": "507ab10b7938dcd14d33121b8462649bdbe575cef248e917dfdf7566078ab5d0195ca1add95eae4863de3f652eb56db0a8669a67d5b5344e094d086f9dab5a08",
+      "size": 268662
+    },
+    {
+      "id": "krypton",
+      "name": "Krypton",
+      "version": "0.2.10",
+      "project": "fQEb0iXm",
+      "slug": "krypton",
+      "versionId": "O9LmWYR7",
+      "file": "krypton-0.2.10.jar",
+      "url": "https://cdn.modrinth.com/data/fQEb0iXm/versions/O9LmWYR7/krypton-0.2.10.jar",
+      "sha1": "94ddaeeae6ca7fecc79e54a0aa02a5438a775a99",
+      "sha512": "4dcd7228d1890ddfc78c99ff284b45f9cf40aae77ef6359308e26d06fa0d938365255696af4cc12d524c46c4886cdcd19268c165a2bf0a2835202fe857da5cab",
+      "size": 270195
+    },
+    {
+      "id": "iris",
+      "name": "Iris Shaders",
+      "version": "1.10.8+mc1.21.11",
+      "optional": true,
+      "requires": [
+        "sodium"
+      ],
+      "project": "YL57xq9U",
+      "slug": "iris",
+      "versionId": "ka9PDlsN",
+      "file": "iris-fabric-1.10.8+mc1.21.11.jar",
+      "url": "https://cdn.modrinth.com/data/YL57xq9U/versions/ka9PDlsN/iris-fabric-1.10.8%2Bmc1.21.11.jar",
+      "sha1": "acfbe6d065b6c35d85c14da04d35e073363f3acf",
+      "sha512": "f0cad4b6af593b6fc25738c4ef5a2b346125f9693d25a0d486858e54798d2ea87b24d1497e1bb4391729d7d9e490f42771f7fb468d4e1420e372d8643f9e2055",
+      "size": 2807718
+    },
+    {
+      "id": "sodium-extra",
+      "name": "Sodium Extra",
+      "version": "0.9.5+mc1.21.11",
+      "optional": true,
+      "requires": [
+        "sodium"
+      ],
+      "project": "PtjYWJkn",
+      "slug": "sodium-extra",
+      "versionId": "efIKaD8Q",
+      "file": "sodium-extra-fabric-0.9.5+mc1.21.11.jar",
+      "url": "https://cdn.modrinth.com/data/PtjYWJkn/versions/efIKaD8Q/sodium-extra-fabric-0.9.5%2Bmc1.21.11.jar",
+      "sha1": "131a81641152efd5feb90bdb643d82726ec1da89",
+      "sha512": "60716a8f0780dcedc230dda3c93265d55d823313a0846d6e7da482ed0c38506e04079ab72629c8c2201f1b248431d0037fc44e9be89e664b507be53a9a1668f4",
+      "size": 487570
+    },
+    {
+      "id": "reeses-sodium-options",
+      "name": "Reese's Sodium Options",
+      "version": "2.2.4+mc1.21.11",
+      "optional": true,
+      "requires": [
+        "sodium"
+      ],
+      "project": "Bh37bMuy",
+      "slug": "reeses-sodium-options",
+      "versionId": "ffpCc8nY",
+      "file": "reeses-sodium-options-fabric-2.2.4+mc1.21.11.jar",
+      "url": "https://cdn.modrinth.com/data/Bh37bMuy/versions/ffpCc8nY/reeses-sodium-options-fabric-2.2.4%2Bmc1.21.11.jar",
+      "sha1": "295623b7f0bd9ffb365e2364d7229b6ed1e2bedc",
+      "sha512": "224e324effcaa03a38582b05c09cbd79a5922e916888b45849d966a6a7f30a7be18a8cc2ea09f44e79e6ea1a8d143a28c3cbfafdb398025b48ab1a1a7d71fd49",
+      "size": 258250
+    },
+    {
+      "id": "moreculling",
+      "name": "More Culling",
+      "version": "1.6.2",
+      "optional": true,
+      "requires": [
+        "cloth-config"
+      ],
+      "project": "51shyZVL",
+      "slug": "moreculling",
+      "versionId": "wOzykoLV",
+      "file": "moreculling-fabric-1.21.11-1.6.2.jar",
+      "url": "https://cdn.modrinth.com/data/51shyZVL/versions/wOzykoLV/moreculling-fabric-1.21.11-1.6.2.jar",
+      "sha1": "11a929de62650cc536244d4c2ba889fa84c1c0f2",
+      "sha512": "58cec88e84835c543d8604411f89a0984abe51f0332860354355ede290d2442fc33a86ecda1766e0b1a82ba4edfab27f3c9f6855c0af3234e200218b892756f2",
+      "size": 340975
+    },
+    {
+      "id": "cloth-config",
+      "provides": [
+        "cloth-config2"
+      ],
+      "name": "Cloth Config API",
+      "version": "21.11.153",
+      "optional": true,
+      "project": "9s6osm5g",
+      "slug": "cloth-config",
+      "versionId": "xuX40TN5",
+      "file": "cloth-config-21.11.153-fabric.jar",
+      "url": "https://cdn.modrinth.com/data/9s6osm5g/versions/xuX40TN5/cloth-config-21.11.153-fabric.jar",
+      "sha1": "4c224606a963bce223db5b27edb4959ecf40d4ee",
+      "sha512": "8f455489d4b71069e998568cf4e1450116f4360a4eb481cd89117f629c6883164886cf63ca08ac4fc929dd13d1112152755a6216d4a1498ee6406ef102093e51",
+      "size": 1148427
+    },
+    {
+      "id": "badoptimizations",
+      "name": "BadOptimizations",
+      "version": "2.4.1",
+      "optional": true,
+      "project": "g96Z4WVZ",
+      "slug": "badoptimizations",
+      "versionId": "Q3Dusz2j",
+      "file": "BadOptimizations-2.4.1-1.21.11.jar",
+      "url": "https://cdn.modrinth.com/data/g96Z4WVZ/versions/Q3Dusz2j/BadOptimizations-2.4.1-1.21.11.jar",
+      "sha1": "70fa28d5a7a1fdd61dd804ca6ac411750da1473f",
+      "sha512": "ff91f1866f21a13a32d379080b8efb5d4e07577591228c1d307b34d052696c9bdcbaf7706208dfbac56abc2c29482a15edcbf11f69fc0a01e459c4c20a5c2c28",
+      "size": 269545
+    },
+    {
+      "id": "flashback",
+      "name": "Flashback",
+      "version": "0.39.10",
+      "optional": true,
+      "requires": [
+        "fabric-api"
+      ],
+      "project": "4das1Fjq",
+      "slug": "flashback",
+      "versionId": "JTAZ57qO",
+      "file": "Flashback-0.39.10-for-MC1.21.11.jar",
+      "url": "https://cdn.modrinth.com/data/4das1Fjq/versions/JTAZ57qO/Flashback-0.39.10-for-MC1.21.11.jar",
+      "sha1": "6435f1924b06d53dfc119c20d16eb5248f082cdd",
+      "sha512": "eb2cb1ad543df6102c5c26a1272887ed0cbbb15332adeb5f4e32b3221e4570ad227cf1b390d9f11a4924e41a8b9f7dc2ae4f5bc8de1a7068a005d7ed449b9f66",
+      "size": 210513938
+    },
+    {
+      "id": "c2me",
+      "name": "Concurrent Chunk Management Engine (Fabric)",
+      "version": "0.3.6.0.0+1.21.11",
+      "optional": true,
+      "project": "VSNURh3q",
+      "slug": "c2me-fabric",
+      "versionId": "olrVZpJd",
+      "file": "c2me-fabric-mc1.21.11-0.3.6.0.0.jar",
+      "url": "https://cdn.modrinth.com/data/VSNURh3q/versions/olrVZpJd/c2me-fabric-mc1.21.11-0.3.6.0.0.jar",
+      "sha1": "587f9a3d9e4591e8e1a1c3eda61ed2f7bfa5dc46",
+      "sha512": "c9b11100572fb71c3080ff11b011467624e8013b9942aade09a5c77eb62b3289667bad70501ddea8f35deb0a5d26884b79f76d4ed112d32342471ca7384b788a",
+      "size": 4687147
+    },
+    {
+      "id": "scalablelux",
+      "provides": [
+        "starlight"
+      ],
+      "name": "ScalableLux",
+      "version": "0.1.6+fabric.c25518a",
+      "optional": true,
+      "project": "Ps1zyz6x",
+      "slug": "scalablelux",
+      "versionId": "PV9KcrYQ",
+      "file": "ScalableLux-0.1.6+fabric.c25518a-all.jar",
+      "url": "https://cdn.modrinth.com/data/Ps1zyz6x/versions/PV9KcrYQ/ScalableLux-0.1.6%2Bfabric.c25518a-all.jar",
+      "sha1": "9df93ab6442fa374c17fab6b5181fe2c215d9d5b",
+      "sha512": "729515c1e75cf8d9cd704f12b3487ddb9664cf9928e7b85b12289c8fbbc7ed82d0211e1851375cbd5b385820b4fedbc3f617038fff5e30b302047b0937042ae7",
+      "size": 182846
+    }
+  ]
+}

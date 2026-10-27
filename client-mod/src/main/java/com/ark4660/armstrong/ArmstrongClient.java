@@ -42,11 +42,14 @@ import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.minecraft.world.InteractionResult;
 //? if >=26 {
 import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
+//?} else {
+/*import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+*///?}
+//? if >=1.21.11 {
 import net.fabricmc.fabric.api.client.rendering.v1.hud.HudElementRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.hud.VanillaHudElements;
 //?} else {
-/*import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
-import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+/*import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 *///?}
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.fabricmc.fabric.api.resource.SimpleSynchronousResourceReloadListener;
@@ -93,9 +96,9 @@ public final class ArmstrongClient implements ClientModInitializer {
 		return Identifier.fromNamespaceAndPath(MOD_ID, path);
 	}
 
-	// The controls-screen group for Armstrong's keys: a registered category in
-	// 26.x, a translation key before.
-	//? if >=26 {
+	// The controls-screen group for Armstrong's keys: a registered category
+	// from 1.21.11, a translation key before.
+	//? if >=1.21.11 {
 	private static KeyMapping.Category category;
 	//?} else {
 	/*private static final String category = "key.category.armstrong.armstrong";
@@ -113,7 +116,7 @@ public final class ArmstrongClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		// Key codes differ by version (SDL scancodes in 26.x, GLFW keys before):
 		// use InputConstants names, never raw numbers.
-		//? if >=26
+		//? if >=1.21.11
 		category = KeyMapping.Category.register(id(MOD_ID));
 		menuKey = key("menu", InputConstants.KEY_RSHIFT);
 		KeyMapping zoomKey = key("zoom", InputConstants.KEY_C);
@@ -224,7 +227,25 @@ public final class ArmstrongClient implements ClientModInitializer {
 				vanilla -> (g, delta) -> HudHooks.bossBar(g, () -> vanilla.extractRenderState(g, delta)));
 		HudElementRegistry.replaceElement(VanillaHudElements.TITLE_AND_SUBTITLE,
 				vanilla -> (g, delta) -> HudHooks.titles(g, () -> vanilla.extractRenderState(g, delta)));
-		//?} else {
+		//?} elif >=1.21.11 {
+		/*// Fabric's names for the vanilla elements were still Yarn's before 26.x.
+		HudElementRegistry.attachElementBefore(VanillaHudElements.CHAT, id("modules"), (g, delta) -> {
+			if (Bench.enabled()) {
+				Bench.frame();
+			}
+			modules.renderHud(g, Minecraft.getInstance());
+		});
+		HudElementRegistry.replaceElement(VanillaHudElements.STATUS_EFFECTS,
+				vanilla -> (g, delta) -> HudHooks.effects(g, () -> vanilla.render(g, delta)));
+		HudElementRegistry.replaceElement(VanillaHudElements.CROSSHAIR,
+				vanilla -> (g, delta) -> HudHooks.crosshair(g, () -> vanilla.render(g, delta)));
+		HudElementRegistry.replaceElement(VanillaHudElements.SCOREBOARD,
+				vanilla -> (g, delta) -> HudHooks.scoreboard(g, () -> vanilla.render(g, delta)));
+		HudElementRegistry.replaceElement(VanillaHudElements.BOSS_BAR,
+				vanilla -> (g, delta) -> HudHooks.bossBar(g, () -> vanilla.render(g, delta)));
+		HudElementRegistry.replaceElement(VanillaHudElements.TITLE_AND_SUBTITLE,
+				vanilla -> (g, delta) -> HudHooks.titles(g, () -> vanilla.render(g, delta)));
+		*///?} else {
 		/*// The vanilla elements go through HudHooks from HudMixin and BossBarMixin.
 		// The HUD is drawn in depth layers (200 apart): draw in front of them all.
 		HudRenderCallback.EVENT.register((g, delta) -> {

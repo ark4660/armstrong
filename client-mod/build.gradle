@@ -11,6 +11,8 @@ def javaVersion = project.java_version as int
 stonecutter {
 	replacements.regex(current.parsed.matches('>=26')) {
 		replace '\\bGuiGraphics\\b', 'GuiGraphicsExtractor', '\\bGuiGraphicsExtractor\\b', 'GuiGraphics'
+	}
+	replacements.regex(current.parsed.matches('>=1.21.11')) {
 		replace '\\bResourceLocation\\b', 'Identifier', '\\bIdentifier\\b', 'ResourceLocation'
 	}
 }

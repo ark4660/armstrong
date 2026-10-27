@@ -13,7 +13,7 @@ import net.minecraft.resources.Identifier;
 /** Cosmetics: an Armstrong cape replaces the player's cape (and elytra look). */
 @Mixin(AbstractClientPlayer.class)
 public class PlayerSkinMixin {
-	//? if >=26 {
+	//? if >=1.21.11 {
 	@Inject(method = "getSkin", at = @At("RETURN"), cancellable = true)
 	private void armstrong$cape(CallbackInfoReturnable<net.minecraft.world.entity.player.PlayerSkin> cir) {
 		Identifier cape = CosmeticsModule.cape(((AbstractClientPlayer) (Object) this).getUUID());

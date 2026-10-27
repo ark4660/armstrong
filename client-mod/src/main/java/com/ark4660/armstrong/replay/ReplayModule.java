@@ -42,8 +42,13 @@ public final class ReplayModule extends Module implements Indicator {
 		while (key.consumeClick()) {
 			if (!Flashback.installed()) {
 				if (mc.player != null) {
-					mc.player.sendSystemMessage(net.minecraft.network.chat.Component.literal(
-							"Replays need the Flashback add-on: launcher → Mods → Client add-ons."));
+					net.minecraft.network.chat.Component hint = net.minecraft.network.chat.Component.literal(
+							"Replays need the Flashback add-on: launcher → Mods → Client add-ons.");
+					//? if >=26 {
+					mc.player.sendSystemMessage(hint);
+					//?} else {
+					/*mc.player.displayClientMessage(hint, false);
+					*///?}
 				}
 			} else if (Flashback.recording()) {
 				Flashback.finish();

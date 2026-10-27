@@ -29,7 +29,10 @@ public final class Mc {
 		//? if >=26 {
 		net.minecraft.client.Camera c = mc.gameRenderer.mainCamera();
 		return new View(c.position(), c.yRot(), c.xRot());
-		//?} else {
+		//?} elif >=1.21.11 {
+		/*net.minecraft.client.Camera c = mc.gameRenderer.getMainCamera();
+		return new View(c.position(), c.yRot(), c.xRot());
+		*///?} else {
 		/*net.minecraft.client.Camera c = mc.gameRenderer.getMainCamera();
 		return new View(c.getPosition(), c.getYRot(), c.getXRot());
 		*///?}
@@ -37,7 +40,7 @@ public final class Mc {
 
 	/** The dimension's id, like minecraft:the_nether. */
 	public static String dimension(net.minecraft.world.level.Level level) {
-		//? if >=26 {
+		//? if >=1.21.11 {
 		return level.dimension().identifier().toString();
 		//?} else {
 		/*return level.dimension().location().toString();
@@ -73,7 +76,7 @@ public final class Mc {
 
 	/** The Minecraft version's display name, like 1.21.1. */
 	public static String versionName() {
-		//? if >=26 {
+		//? if >=1.21.11 {
 		return net.minecraft.SharedConstants.getCurrentVersion().name();
 		//?} else {
 		/*return net.minecraft.SharedConstants.getCurrentVersion().getName();
@@ -89,7 +92,7 @@ public final class Mc {
 	public static boolean registerTexture(net.minecraft.resources.Identifier id, byte[] png) {
 		try {
 			com.mojang.blaze3d.platform.NativeImage image = com.mojang.blaze3d.platform.NativeImage.read(png);
-			//? if >=26 {
+			//? if >=1.21.11 {
 			Minecraft.getInstance().getTextureManager().register(id,
 					new net.minecraft.client.renderer.texture.DynamicTexture(id::toString, image));
 			//?} else {
@@ -105,7 +108,7 @@ public final class Mc {
 
 	/** A game profile's UUID (a record from authlib 7 on). */
 	public static java.util.UUID profileId(com.mojang.authlib.GameProfile profile) {
-		//? if >=26 {
+		//? if >=1.21.11 {
 		return profile.id();
 		//?} else {
 		/*return profile.getId();
@@ -114,7 +117,7 @@ public final class Mc {
 
 	/** Whether an Alt key is held. */
 	public static boolean altDown() {
-		//? if >=26 {
+		//? if >=1.21.11 {
 		return Minecraft.getInstance().hasAltDown();
 		//?} else {
 		/*return Screen.hasAltDown();
@@ -142,7 +145,14 @@ public final class Mc {
 		}
 		//? if >=26 {
 		return false;
-		//?} else {
+		//?} elif >=1.21.11 {
+		/*InputConstants.Key bound = KeyBindingHelper.getBoundKeyOf(mapping);
+		com.mojang.blaze3d.platform.Window window = Minecraft.getInstance().getWindow();
+		if (bound.getType() == InputConstants.Type.MOUSE) {
+			return org.lwjgl.glfw.GLFW.glfwGetMouseButton(window.handle(), bound.getValue()) == org.lwjgl.glfw.GLFW.GLFW_PRESS;
+		}
+		return bound.getValue() != InputConstants.UNKNOWN.getValue() && InputConstants.isKeyDown(window, bound.getValue());
+		*///?} else {
 		/*InputConstants.Key bound = KeyBindingHelper.getBoundKeyOf(mapping);
 		long window = Minecraft.getInstance().getWindow().getWindow();
 		if (bound.getType() == InputConstants.Type.MOUSE) {

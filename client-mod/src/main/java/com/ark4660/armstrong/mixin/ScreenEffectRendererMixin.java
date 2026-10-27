@@ -24,7 +24,17 @@ public class ScreenEffectRendererMixin {
 	private static void armstrong$restore(PoseStack pose, net.minecraft.client.renderer.SubmitNodeCollector collector, net.minecraft.client.renderer.texture.TextureAtlasSprite sprite, CallbackInfo ci) {
 		pose.popPose();
 	}
-	//?} else {
+	//?} elif >=1.21.11 {
+	/*@Inject(method = "renderFire", at = @At("HEAD"))
+	private static void armstrong$lowerFire(PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buffers, net.minecraft.client.renderer.texture.TextureAtlasSprite sprite, CallbackInfo ci) {
+		lower(pose);
+	}
+
+	@Inject(method = "renderFire", at = @At("RETURN"))
+	private static void armstrong$restore(PoseStack pose, net.minecraft.client.renderer.MultiBufferSource buffers, net.minecraft.client.renderer.texture.TextureAtlasSprite sprite, CallbackInfo ci) {
+		pose.popPose();
+	}
+	*///?} else {
 	/*@Inject(method = "renderFire", at = @At("HEAD"))
 	private static void armstrong$lowerFire(net.minecraft.client.Minecraft mc, PoseStack pose, CallbackInfo ci) {
 		lower(pose);

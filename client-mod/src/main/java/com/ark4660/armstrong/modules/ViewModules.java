@@ -10,7 +10,7 @@ import com.ark4660.armstrong.module.Setting;
 import net.minecraft.client.CameraType;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-//? if >=26 {
+//? if >=1.21.11 {
 import net.minecraft.client.gui.components.debug.DebugScreenEntries;
 import net.minecraft.client.gui.components.debug.DebugScreenEntryStatus;
 //?}
@@ -133,7 +133,7 @@ public final class ViewModules {
 
 		@Override
 		protected void set(Minecraft mc, boolean on) {
-			//? if >=26 {
+			//? if >=1.21.11 {
 			mc.debugEntries.setStatus(DebugScreenEntries.ENTITY_HITBOXES, on ? DebugScreenEntryStatus.ALWAYS_ON : DebugScreenEntryStatus.NEVER);
 			//?} else {
 			/*mc.getEntityRenderDispatcher().setRenderHitBoxes(on);
@@ -148,7 +148,7 @@ public final class ViewModules {
 
 		@Override
 		protected void set(Minecraft mc, boolean on) {
-			//? if >=26 {
+			//? if >=1.21.11 {
 			mc.debugEntries.setStatus(DebugScreenEntries.CHUNK_BORDERS, on ? DebugScreenEntryStatus.ALWAYS_ON : DebugScreenEntryStatus.NEVER);
 			//?} else {
 			/*if (mc.debugRenderer.switchRenderChunkborder() != on) {

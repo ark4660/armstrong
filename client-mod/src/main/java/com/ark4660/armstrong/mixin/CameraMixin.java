@@ -31,7 +31,18 @@ public class CameraMixin {
 		}
 		Mc.fov = cir.getReturnValueF(); // for waypoint markers
 	}
-	//?} else {
+	//?} elif >=1.21.11 {
+	/*@Inject(method = "getFov", at = @At("RETURN"), cancellable = true)
+	private void armstrong$zoom(Camera camera, float partialTick, boolean world, CallbackInfoReturnable<Float> cir) {
+		Zoom zoom = ArmstrongClient.zoom();
+		if (world && zoom != null && zoom.active()) {
+			cir.setReturnValue(cir.getReturnValueF() / zoom.divisor());
+		}
+		if (world) {
+			Mc.fov = cir.getReturnValueF(); // for waypoint markers
+		}
+	}
+	*///?} else {
 	/*@Inject(method = "getFov", at = @At("RETURN"), cancellable = true)
 	private void armstrong$zoom(Camera camera, float partialTick, boolean world, CallbackInfoReturnable<Double> cir) {
 		Zoom zoom = ArmstrongClient.zoom();

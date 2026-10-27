@@ -11,13 +11,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.network.chat.Component;
-//? if >=26
+//? if >=1.21.11
 import net.minecraft.network.chat.FontDescription;
 import net.minecraft.network.chat.MutableComponent;
 
 /** Drawing helpers for terminal-style text: spans of colored monospace text and panels. */
 public final class Term {
-	//? if >=26 {
+	//? if >=1.21.11 {
 	public static final FontDescription MONO = new FontDescription.Resource(ArmstrongClient.id("mono"));
 	//?} else {
 	/*public static final net.minecraft.resources.Identifier MONO = ArmstrongClient.id("mono");

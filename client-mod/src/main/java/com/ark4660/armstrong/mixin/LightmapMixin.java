@@ -19,7 +19,10 @@ import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 public class LightmapMixin {
 	//? if >=26 {
 	@ModifyExpressionValue(method = "extract", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;", ordinal = 1))
-	//?} else {
+	//?} elif >=1.21.11 {
+	/*// The third option read is gamma (hideLightningFlash and darknessEffectScale come first).
+	@ModifyExpressionValue(method = "updateLightTexture", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;", ordinal = 2))
+	*///?} else {
 	/*@ModifyExpressionValue(method = "updateLightTexture", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/OptionInstance;get()Ljava/lang/Object;", ordinal = 1))
 	*///?}
 	private Object armstrong$fullbright(Object gamma) {

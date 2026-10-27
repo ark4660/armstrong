@@ -14,7 +14,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
-//? if >=26
+//? if >=1.21.11
 import net.minecraft.client.input.MouseButtonInfo;
 
 /**
@@ -23,7 +23,7 @@ import net.minecraft.client.input.MouseButtonInfo;
  */
 @Mixin(MouseHandler.class)
 public class MouseHandlerMixin {
-	//? if >=26 {
+	//? if >=1.21.11 {
 	@Inject(method = "onButton", at = @At("HEAD"))
 	private void armstrong$countClick(long window, MouseButtonInfo info, int action, CallbackInfo ci) {
 		count(info.button(), action);

@@ -155,7 +155,7 @@ public final class InfoHuds {
 				count(out, inv, "gapples", Items.GOLDEN_APPLE, Items.ENCHANTED_GOLDEN_APPLE);
 			}
 			if (cooldown.get()) {
-				//? if >=26 {
+				//? if >=1.21.11 {
 				float pct = mc.player.getCooldowns().getCooldownPercent(new ItemStack(Items.ENDER_PEARL), 0f);
 				//?} else {
 				/*float pct = mc.player.getCooldowns().getCooldownPercent(Items.ENDER_PEARL, 0f);
