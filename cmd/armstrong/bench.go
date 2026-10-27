@@ -201,6 +201,9 @@ func prepareBenchDir(gameDir string, dataVersion, rd int, extra []string) error 
 	if err := bench.ResetWorld(gameDir); err != nil {
 		return err
 	}
+	if err := os.MkdirAll(gameDir, 0o755); err != nil { // the first run on a machine
+		return err
+	}
 	if err := os.WriteFile(filepath.Join(gameDir, "options.txt"), []byte(bench.Options(dataVersion, rd, extra)), 0o644); err != nil {
 		return err
 	}
