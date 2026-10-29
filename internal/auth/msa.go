@@ -15,7 +15,7 @@ import (
 
 // ClientID is Armstrong's Azure app, approved by Mojang for the Minecraft
 // API. It's a public client: there is no secret, and none must ever ship.
-const ClientID = "f6945deb-3d58-44a3-bf89-14286402ba29"
+const ClientID = "b1e1a690-3522-4437-8d71-d1f576627b66"
 
 const scope = "XboxLive.signin offline_access"
 
